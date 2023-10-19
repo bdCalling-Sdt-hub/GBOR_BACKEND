@@ -13,7 +13,7 @@ exports.banner=async(req,res,next)=>{
         let bannerimage="";
        
         if (req.files.bannerImage[0]) {
-            bannerimage = `${req.protocol}://${req.get('host')}/upload/banner/${req.files.bannerImage[0].filename}`;
+            bannerimage = `${req.protocol}://${req.get('host')}/upload/image/${req.files.bannerImage[0].filename}`;
         }
 
         console.log(bannerimage)
@@ -32,6 +32,22 @@ exports.banner=async(req,res,next)=>{
    }
    
     
+}
+
+exports.bannerDataGet=async(req,res,next)=>{
+    if(req.user.role=="admin"){
+
+       try{
+            let AllBanners = await BannerModel.find();
+            return res.status(200).json({status:200,message:"Data get successfully",data:{"Banners data":AllBanners}})
+           
+
+       }catch(err){
+          next(err.message);
+       } 
+    }else{
+        return res.status(401).json({status:401,message:"UnAuthorized user"});
+    }
 }
 
 

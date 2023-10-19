@@ -17,8 +17,8 @@ exports.userRegister = async (req, res) => {
     const { fName, lName, email, userName, dateOfBirth, password, confirmPass, termAndCondition, role,creator_category } = req.body
     const user = await UserModel.findOne({ email: email })
     if (user) {
-        return res.status(409).send({ "messege": "email already exists" })
-
+        return res.status(409).send({ "messege": "email already exists" });
+        
     } else {
         if (fName && lName && email && userName && dateOfBirth && password && confirmPass) {
             if (password === confirmPass) {
@@ -125,8 +125,11 @@ exports.userLogin = async (req, res) => {
                 const ismatch = await bcrypt.compare(password, user.password)
                 if ((user.email === email) && ismatch) {
                     const token = jwt.sign({ userID: user._id }, process.env.JWT_SECRET, { expiresIn: "3d" })
-                    const userInfo = await UserModel.findOne({ email }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'role','emailVerified']);
-                    return res.status(200).send({ "status": 200, "messege": "you are logged in successfully", "token": token, "data": { "userInfo": userInfo } })
+
+                    const userInfo = await UserModel.findOne({ email }).select(['fName', 'lName', 'email', 'userName', 'uploadId','role','emailVerified']);
+                    const userData = await UserModel.findOne({ email });
+                    let identity=userData.role=="admin"?true:false;
+                    return res.status(200).send({ "status": 200, "messege": "you are logged in successfully", "token": token, "data": { "userInfo": userInfo,identity}})
 
                 } else {
                     return res.status(401).send({ "status": 401, "messege": "your credential doesnt match" })
@@ -169,8 +172,12 @@ exports.changeuserpassword = async (req, res) => {
 }
 
 exports.loggeduserdata = async (req, res) => {
-    const user = await UserModel.findById({ _id: req.user._id }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'role','creator_category'])
-    return res.status(200).send({ "status": 200, "messege": "userdata from database", "data": { "userInfo": user } })
+
+    const userData=await UserModel.findById({ _id: req.user._id });
+    let identity=userData.role=="admin"?true:false;
+    const user = await UserModel.findById({ _id: req.user._id }).select(['fName', 'lName', 'email', 'userName', 'uploadId','creator_category']);
+    
+    return res.status(200).send({ "status": 200, "messege": "userdata from database", "data": { "userInfo": user,identity} })
 
 }
 
@@ -248,6 +255,8 @@ exports.verifyCodeForResetPassword = async (req, res, next) => {
     }
 };
 
+
+
 exports.resetpassword = async (req, res) => {
     const { password, confirmPass, email } = req.body
     
@@ -276,7 +285,22 @@ exports.resetpassword = async (req, res) => {
     }else{
         return res.status(400).send({ "status": 400, "messege": "email doesnt exists" }) 
     }
-   
+}
+
+exports.getAllContentCreator=async(req,res)=>{
+ 
+
+       try{
+
+        let ContentCreator=await UserModel.find({role:"c_creator",emailVerified:true}).select(['fName', 'lName', 'email', 'userName', 'uploadId','creator_category']);;
+        
+        return res.status(200).json({status:200,message:"All content creator",data:{"all_creator":ContentCreator}})
+
+       }catch(err){
+
+           next(err.message);
+
+       }       
 
 }
 
