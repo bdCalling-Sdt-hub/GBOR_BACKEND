@@ -7,6 +7,7 @@ const userRoute = require("./Routes/user.route")
 const dbconection = require("./config/dbconection")
 const aboutAndPrivacyRoute = require("./Routes/aboutAndPrivacy.route")
 const bannerRoute = require("./Routes/banner.route")
+const emailSendRoute = require("./Routes/emailSend.route")
 const notificationRoute=require("./Routes/notification.route")
 app.use(cors());
 app.use(express.json());
@@ -36,6 +37,7 @@ app.use("/api/auth/", userRoute);
 app.use("/api/", aboutAndPrivacyRoute)
 app.use("/api/", bannerRoute)
 app.use("/api/",notificationRoute)
+app.use("/api/",emailSendRoute)
 
 
 app.use('/upload/image', express.static(__dirname + '/upload/image/'));
