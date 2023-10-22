@@ -258,47 +258,58 @@ exports.verifyCodeForResetPassword = async (req, res, next) => {
 };
 
 exports.getAllUnapprovedUser = async (req, res) => {
-    try {
-        let allUnapprovedUser = await UserModel.find({ role: "unknown" })
-        return res.status(200).json({ status: 200, message: 'All unapproved user', data: { "all_unapproved_user": allUnapprovedUser } })
-    } catch (err) {
-        next(err.message);
+    if (req.user.role == "admin") {
+        try {
+            let allUnapprovedUser = await UserModel.find({ role: "unknown",emailVerified:true})
+            return res.status(200).json({ status: 200, message: 'All unapproved user', data: { "all_unapproved_user": allUnapprovedUser } })
+        } catch (err) {
+            next(err.message);
+        }
+    } else {
+        return res.status(401).json({ status: 401, message: 'UnAuthorized user.' });
     }
+
 }
 
 exports.approveUser = async (req, res) => {
-    try {
-        const id = req.params.id;
-        const user = await UserModel.findById(id);
-        if (!user) {
-            return res.status(404).json({ status: 404, message: 'User not found' });
-        } else if (user) {
-            user.role = "c_creator";
-            await user.save();
 
-            //activating chat
-            const chat = await addChat({ participants: [user._id, req.user._id] });
+   
 
-            if (chat) {
-                console.log("chat created");
-                const message = await addMessage({
-                    chat: chat._id,
-                    sender: req.user._id,
-                    message: "A warm welcome to the monGbor"
-                });
-                if (message) {
-                    console.log("message created");
+    if(req.user.role=="admin"){
+        try {
+            const id = req.params.id;
+            const user = await UserModel.findById(id);
+            if (!user) {
+                return res.status(404).json({ status: 404, message: 'User not found' });
+            } else if (user) {
+                user.role = "c_creator";
+                await user.save();
+    
+                //activating chat
+                const chat = await addChat({ participants: [user._id, req.user._id] });
+    
+                if (chat) {
+                    console.log("chat created");
+                    const message = await addMessage({
+                        chat: chat._id,
+                        sender: req.user._id,
+                        message: "A warm welcome to the monGbor"
+                    });
+                    if (message) {
+                        console.log("message created");
+                    }
                 }
-            }
-            return res.status(200).json({ status: 200, message: 'User approved successfully' });
-        } else {
-            return res.status(401).json({ status: 401, message: 'Failed to approve user' });
-        };
+                return res.status(200).json({ status: 200, message: 'User approved successfully' });
+            } else {
+                return res.status(401).json({ status: 401, message: 'Failed to approve user' });
+            };
+        }
+        catch (err) {
+            next(err.message);
+        }
     }
-    catch (err) {
-        next(err.message);
+
     }
-}
 
 exports.resetpassword = async (req, res) => {
     const { password, confirmPass, email } = req.body
@@ -329,6 +340,31 @@ exports.resetpassword = async (req, res) => {
         return res.status(400).send({ "status": 400, "messege": "email doesnt exists" })
     }
 }
+
+
+
+
+exports.contentCreator = async (req, res) => {
+
+    
+    try {
+
+        let ContentCreator = await UserModel.findById(req.params.id).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category']);;
+
+        return res.status(200).json({ status: 200, message: "content creator details", data: { "Creator Details": ContentCreator } })
+
+    } catch (err) {
+
+        next(err.message);
+
+    }
+
+}
+
+
+
+
+
 
 exports.getAllContentCreator = async (req, res) => {
 

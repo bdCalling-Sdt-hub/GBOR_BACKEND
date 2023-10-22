@@ -19,10 +19,12 @@ router.post("/send-reset-password-email", userscontroller.senduserpasswordresete
 router.post("/verify-code-reset-password", userscontroller.verifyCodeForResetPassword)
 router.post("/reset-password",userscontroller.resetpassword)
 /////////////////////////////////////
-router.get("/all-unapproved-user", userscontroller.getAllUnapprovedUser)
+router.get("/all-unapproved-user",userauthmiddleware.checkuser,userscontroller.getAllUnapprovedUser)
 
-router.post("/approve-user", userscontroller.approveUser)
+router.post("/approve-user/:id",userauthmiddleware.checkuser,userscontroller.approveUser)
 
 
 router.get("/content-creator", userscontroller.getAllContentCreator)
+router.get("/content-creator/:id", userscontroller.contentCreator)
+
 module.exports = router
