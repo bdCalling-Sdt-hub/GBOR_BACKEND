@@ -259,9 +259,22 @@ exports.verifyCodeForResetPassword = async (req, res, next) => {
 
 exports.getAllUnapprovedUser = async (req, res) => {
     if (req.user.role == "admin") {
+
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 2;
+
         try {
-            let allUnapprovedUser = await UserModel.find({ role: "unknown",emailVerified:true})
-            return res.status(200).json({ status: 200, message: 'All unapproved user', data: { "all_unapproved_user": allUnapprovedUser } })
+            let allUnapprovedUser = await UserModel.find({ role: "unknown",emailVerified:true}).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 });
+            let totalUser=await UserModel.find({role: "unknown",emailVerified:true}).countDocuments();
+            
+
+            return res.status(200).json({ status: 200, message: 'All unapproved user', data: { "all_unapproved_user": allUnapprovedUser },pagination: {
+                totalDocuments: totalUser,
+                totalPage: Math.ceil(totalUser / limit),
+                currentPage: page,
+                previousPage: page - 1 > 0 ? page - 1 : null,
+                nextPage: page + 1 <= Math.ceil(totalUser / limit) ? page + 1 : null,
+            } });
         } catch (err) {
             next(err.message);
         }
@@ -273,9 +286,7 @@ exports.getAllUnapprovedUser = async (req, res) => {
 
 exports.approveUser = async (req, res) => {
 
-   
-
-    if(req.user.role=="admin"){
+   if(req.user.role=="admin"){
         try {
             const id = req.params.id;
             const user = await UserModel.findById(id);
@@ -309,7 +320,36 @@ exports.approveUser = async (req, res) => {
         }
     }
 
-    }
+}
+
+
+exports.cancelUser = async (req, res) => {
+
+    if(req.user.role=="admin"){
+         try {
+             const id = req.params.id;
+             const user = await UserModel.findById(id);
+             if (!user) {
+                 return res.status(404).json({ status: 404, message: 'User not found' });
+             } else if (user) {
+                 user.role = "unknown";
+                 await user.save();
+     
+                 //activating chat
+                
+                 return res.status(200).json({ status: 200, message: 'User cencal successfully' });
+             } else {
+                 return res.status(401).json({ status: 401, message: 'Failed to cancel user' });
+             };
+         }
+         catch (err) {
+             next(err.message);
+         }
+     }
+ 
+ }
+
+ 
 
 exports.resetpassword = async (req, res) => {
     const { password, confirmPass, email } = req.body
