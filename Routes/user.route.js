@@ -22,7 +22,8 @@ router.post("/reset-password",userscontroller.resetpassword)
 router.get("/all-unapproved-user",userauthmiddleware.checkuser,userscontroller.getAllUnapprovedUser)
 
 router.post("/approve-user/:id",userauthmiddleware.checkuser,userscontroller.approveUser)
-router.post("/cancel-user/:id",userauthmiddleware.checkuser,userscontroller.cancelUser)
+router.patch("/delete-user/:id",userauthmiddleware.checkuser,userscontroller.deleteUser)
+router.patch("/cancel-user/:id",userauthmiddleware.checkuser,userscontroller.cancelUser)
 
 router.get("/content-creator", userscontroller.getAllContentCreator)
 router.get("/content-creator/:id", userscontroller.contentCreator)

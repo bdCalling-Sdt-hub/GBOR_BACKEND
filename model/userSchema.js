@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema({
         trim:true
     },
     termAndCondition: { type: Boolean, default: false },
-    role: { type: String, enum: ['unknown','c_creator', 'admin'], default: 'unknown' },
+    role: { type: String, enum: ['unknown','c_creator', 'admin','delete'], default: 'unknown' },
     emailVerified: { type: Boolean, default: false },
     emailVerifyCode: { type: String, required: false },
     creator_category: { type: String, required: false },

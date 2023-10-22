@@ -332,7 +332,7 @@ exports.cancelUser = async (req, res) => {
              if (!user) {
                  return res.status(404).json({ status: 404, message: 'User not found' });
              } else if (user) {
-                 user.role = "unknown";
+                 user.role = "delete";
                  await user.save();
      
                  //activating chat
@@ -349,7 +349,34 @@ exports.cancelUser = async (req, res) => {
  
  }
 
+
+ exports.deleteUser = async (req, res) => {
+
+    if(req.user.role=="admin"){
+         try {
+             const id = req.params.id;
+             const user = await UserModel.findById(id);
+             if (!user) {
+                 return res.status(404).json({ status: 404, message: 'User not found' });
+             } else if (user) {
+                 user.role = "unknown";
+                 await user.save();
+     
+                 //activating chat
+                
+                 return res.status(200).json({ status: 200, message: 'User delete successfully' });
+             } else {
+                 return res.status(401).json({ status: 401, message: 'Failed to delete user' });
+             };
+         }
+         catch (err) {
+             next(err.message);
+         }
+     }
  
+ }
+
+
 
 exports.resetpassword = async (req, res) => {
     const { password, confirmPass, email } = req.body
