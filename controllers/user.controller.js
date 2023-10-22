@@ -3,6 +3,8 @@ const bcrypt = require('bcrypt');
 const jwt = require("jsonwebtoken");
 
 const emailWithNodemailer = require("../config/email.config");
+const { addChat } = require("./chat.controller");
+const { addMessage } = require("./message.controller");
 
 
 
@@ -14,11 +16,11 @@ exports.userRegister = async (req, res) => {
         return res.status(400).json({ "messege": req.fileValidationError });
     }
 
-    const { fName, lName, email, userName, dateOfBirth, password, confirmPass, termAndCondition, role,creator_category } = req.body
+    const { fName, lName, email, userName, dateOfBirth, password, confirmPass, termAndCondition, role, creator_category } = req.body
     const user = await UserModel.findOne({ email: email })
     if (user) {
         return res.status(409).send({ "messege": "email already exists" });
-        
+
     } else {
         if (fName && lName && email && userName && dateOfBirth && password && confirmPass) {
             if (password === confirmPass) {
@@ -26,7 +28,7 @@ exports.userRegister = async (req, res) => {
                     const salt = await bcrypt.genSalt(10);
                     const hashpassword = await bcrypt.hash(password, salt);
                     let imageFileName = '';
-                  
+
                     if (req.files.uploadId[0]) {
                         // Add public/uploads link to the image file
 
@@ -70,11 +72,11 @@ exports.userRegister = async (req, res) => {
 
                     // Store the timer reference in the map
                     userTimers.set(user._id, userTimer);
-                    console.log(user._id);     
+                    console.log(user._id);
                     const secretid = process.env.JWT_SECRET;
                     console.log(secretid);
                     const token = jwt.sign({ userID: user._id }, secretid, { expiresIn: "15m" })
-                
+
                     const link = `http://192.168.10.16:5000/email-verify/${user._id}/${token}`
                     // Prepare email for activate user
                     const emailData = {
@@ -91,7 +93,7 @@ exports.userRegister = async (req, res) => {
 
                     //const userInfo = await UserModel.findOne({ email }).select(['fName','lName','email','userName','uploadId','role']);
                     //const userInfo=user.select("-password");
-                    return res.status(201).send({ "status": 201, "messege": "Registerd successfully!Please check your E-mail to verify.","link":link })
+                    return res.status(201).send({ "status": 201, "messege": "Registerd successfully!Please check your E-mail to verify.", "link": link })
                 } catch (e) {
                     console.log(e)
                     return res.status(400).send({ "status": 400, "messege": "unable to register" })
@@ -126,10 +128,10 @@ exports.userLogin = async (req, res) => {
                 if ((user.email === email) && ismatch) {
                     const token = jwt.sign({ userID: user._id }, process.env.JWT_SECRET, { expiresIn: "3d" })
 
-                    const userInfo = await UserModel.findOne({ email }).select(['fName', 'lName', 'email', 'userName', 'uploadId','role','emailVerified']);
+                    const userInfo = await UserModel.findOne({ email }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'role', 'emailVerified']);
                     const userData = await UserModel.findOne({ email });
-                    let identity=userData.role=="admin"?true:false;
-                    return res.status(200).send({ "status": 200, "messege": "you are logged in successfully", "token": token, "data": { "userInfo": userInfo,identity}})
+                    let identity = userData.role == "admin" ? true : false;
+                    return res.status(200).send({ "status": 200, "messege": "you are logged in successfully", "token": token, "data": { "userInfo": userInfo, identity } })
 
                 } else {
                     return res.status(401).send({ "status": 401, "messege": "your credential doesnt match" })
@@ -173,19 +175,19 @@ exports.changeuserpassword = async (req, res) => {
 
 exports.loggeduserdata = async (req, res) => {
 
-    const userData=await UserModel.findById({ _id: req.user._id });
-    let identity=userData.role=="admin"?true:false;
-    const user = await UserModel.findById({ _id: req.user._id }).select(['fName', 'lName', 'email', 'userName', 'uploadId','creator_category']);
-    
-    return res.status(200).send({ "status": 200, "messege": "userdata from database", "data": { "userInfo": user,identity} })
+    const userData = await UserModel.findById({ _id: req.user._id });
+    let identity = userData.role == "admin" ? true : false;
+    const user = await UserModel.findById({ _id: req.user._id }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category']);
+
+    return res.status(200).send({ "status": 200, "messege": "userdata from database", "data": { "userInfo": user, identity } })
 
 }
 
 
 
 exports.verifyEmail = async (req, res, next) => {
-  try {
-       
+    try {
+
         const user = await UserModel.findOne({ email: req.user.email });
         if (!user) {
             return res.status(404).json({ status: 404, message: 'User Not Found' });
@@ -239,32 +241,73 @@ exports.senduserpasswordresetemail = async (req, res) => {
 
 exports.verifyCodeForResetPassword = async (req, res, next) => {
     try {
-        
-        const { verifyCode,email } = req.body;
-        
+
+        const { verifyCode, email } = req.body;
+
         const user = await UserModel.findOne({ email });
         if (!user) {
-            return res.status(401).json({status:401, message: 'User not found' });
+            return res.status(401).json({ status: 401, message: 'User not found' });
         } else if (user.emailVerifyCode === verifyCode) {
             return res.status(200).json({ status: 200, message: 'User verified successfully' });
         } else {
-            return res.status(400).json({ status:400, message: 'Failed to verify user' });
+            return res.status(400).json({ status: 400, message: 'Failed to verify user' });
         }
     } catch (error) {
         next(error)
     }
 };
 
+exports.getAllUnapprovedUser = async (req, res) => {
+    try {
+        let allUnapprovedUser = await UserModel.find({ role: "unknown" })
+        return res.status(200).json({ status: 200, message: 'All unapproved user', data: { "all_unapproved_user": allUnapprovedUser } })
+    } catch (err) {
+        next(err.message);
+    }
+}
 
+exports.approveUser = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const user = await UserModel.findById(id);
+        if (!user) {
+            return res.status(404).json({ status: 404, message: 'User not found' });
+        } else if (user) {
+            user.role = "c_creator";
+            await user.save();
+
+            //activating chat
+            const chat = await addChat({ participants: [user._id, req.user._id] });
+
+            if (chat) {
+                console.log("chat created");
+                const message = await addMessage({
+                    chat: chat._id,
+                    sender: req.user._id,
+                    message: "A warm welcome to the monGbor"
+                });
+                if (message) {
+                    console.log("message created");
+                }
+            }
+            return res.status(200).json({ status: 200, message: 'User approved successfully' });
+        } else {
+            return res.status(401).json({ status: 401, message: 'Failed to approve user' });
+        };
+    }
+    catch (err) {
+        next(err.message);
+    }
+}
 
 exports.resetpassword = async (req, res) => {
     const { password, confirmPass, email } = req.body
-    
-    const user = await UserModel.findOne({email})
-    
-    if(user){
+
+    const user = await UserModel.findOne({ email })
+
+    if (user) {
         try {
-           
+
             if (password && confirmPass) {
                 if (password !== confirmPass) {
                     res.send({ "status": "failed", "messege": "password and confirm password doesnt match" })
@@ -272,35 +315,35 @@ exports.resetpassword = async (req, res) => {
                     const salt = await bcrypt.genSalt(10)
                     const hashpassword = await bcrypt.hash(password, salt)
                     const passchange = await UserModel.findByIdAndUpdate(user._id, { $set: { password: hashpassword } })
-    
+
                     return res.status(200).json({ "status": 200, "messege": "password reset successfully" })
                 }
             } else {
                 return res.status(400).send({ "status": 400, "messege": "All fields are required" })
             }
         } catch (error) {
-            
+
             res.send({ "status": "failed", "messege": error.message })
         }
-    }else{
-        return res.status(400).send({ "status": 400, "messege": "email doesnt exists" }) 
+    } else {
+        return res.status(400).send({ "status": 400, "messege": "email doesnt exists" })
     }
 }
 
-exports.getAllContentCreator=async(req,res)=>{
- 
+exports.getAllContentCreator = async (req, res) => {
 
-       try{
 
-        let ContentCreator=await UserModel.find({role:"c_creator",emailVerified:true}).select(['fName', 'lName', 'email', 'userName', 'uploadId','creator_category']);;
-        
-        return res.status(200).json({status:200,message:"All content creator",data:{"all_creator":ContentCreator}})
+    try {
 
-       }catch(err){
+        let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category']);;
 
-           next(err.message);
+        return res.status(200).json({ status: 200, message: "All content creator", data: { "all_creator": ContentCreator } })
 
-       }       
+    } catch (err) {
+
+        next(err.message);
+
+    }
 
 }
 
