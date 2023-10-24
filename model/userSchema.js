@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema({
         trim:true
     },
     website: { type: String, default: false },
-    socialLink:{type:Array,default:false},
+    socialLink:{type:Object,default:false},
     termAndCondition: { type: Boolean, default: false },
     role: { type: String, enum: ['unknown','c_creator', 'admin','delete'], default: 'unknown' },
     emailVerified: { type: Boolean, default: false },

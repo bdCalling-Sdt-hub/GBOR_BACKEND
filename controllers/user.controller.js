@@ -438,9 +438,19 @@ exports.getAllContentCreator = async (req, res) => {
 
     try {
 
-        let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category']);;
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 15;
 
-        return res.status(200).json({ status: 200, message: "All content creator", data: { "all_creator": ContentCreator } })
+        let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category']);
+        let totalUser=await UserModel.find({role: "c_creator",emailVerified:true}).countDocuments();
+
+        return res.status(200).json({ status: 200, message: "All content creator", data: { "all_creator": ContentCreator },pagination: {
+            totalDocuments: totalUser,
+            totalPage: Math.ceil(totalUser / limit),
+            currentPage: page,
+            previousPage: page - 1 > 0 ? page - 1 : null,
+            nextPage: page + 1 <= Math.ceil(totalUser / limit) ? page + 1 : null,
+        } })
 
     } catch (err) {
 
@@ -453,6 +463,8 @@ exports.getAllContentCreator = async (req, res) => {
 
 
 exports.profileUpdate=async(req,res)=>{
+
+    
 
     try{
         let {fName,lName,website,socialLink,uploadId}=req.body;
@@ -474,12 +486,15 @@ exports.profileUpdate=async(req,res)=>{
             fName,lName,website,socialLink,uploadId:imageFileName
         }
 
-        console.log(update)
+      
 
         let updatedDoc= await UserModel.findByIdAndUpdate(documentId,update,{new:true}).select(["-password","-role","-termAndCondition","-emailVerified","-emailVerifyCode"]);
+        let data=await UserModel.findByIdAndUpdate(documentId,update,{new:true}).select(["role"]);
 
+        let identity=data.role=="admin"?true:false;
+        console.log(identity)
         if (updatedDoc) {
-            return res.status(200).json({ status: 200, message: "Profile updated successfully", data: { "userInfo": updatedDoc } })
+            return res.status(200).json({ status: 200, message: "Profile updated successfully", data: { "userInfo": updatedDoc,identity } })
           } else {
             return res.status(401).json({ status: 401, message: "Profile not updated"})
           }
