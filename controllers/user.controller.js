@@ -128,7 +128,7 @@ exports.userLogin = async (req, res) => {
                 if ((user.email === email) && ismatch) {
                     const token = jwt.sign({ userID: user._id }, process.env.JWT_SECRET, { expiresIn: "3d" })
 
-                    const userInfo = await UserModel.findOne({ email }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'role', 'emailVerified']);
+                    const userInfo = await UserModel.findOne({ email }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'role', 'emailVerified','dateOfBirth']);
                     const userData = await UserModel.findOne({ email });
                     let identity = userData.role == "admin" ? true : false;
                     return res.status(200).send({ "status": 200, "messege": "you are logged in successfully", "token": token, "data": { "userInfo": userInfo, identity } })
@@ -177,7 +177,7 @@ exports.loggeduserdata = async (req, res) => {
 
     const userData = await UserModel.findById({ _id: req.user._id });
     let identity = userData.role == "admin" ? true : false;
-    const user = await UserModel.findById({ _id: req.user._id }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category']);
+    const user = await UserModel.findById({ _id: req.user._id }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category','dateOfBirth']);
 
     return res.status(200).send({ "status": 200, "messege": "userdata from database", "data": { "userInfo": user, identity } })
 
@@ -261,7 +261,7 @@ exports.getAllUnapprovedUser = async (req, res) => {
     if (req.user.role == "admin") {
 
         const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 2;
+        const limit = Number(req.query.limit) || 5;
 
         try {
             let allUnapprovedUser = await UserModel.find({ role: "unknown",emailVerified:true}).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 });
@@ -452,5 +452,42 @@ exports.getAllContentCreator = async (req, res) => {
 
 
 
+exports.profileUpdate=async(req,res)=>{
+
+    try{
+        let {fName,lName,website,socialLink,uploadId}=req.body;
+       
+        
+        const documentId = req.params.id;
+
+        
+
+        let imageFileName = '';
+
+        if (req.files.uploadId[0]) {
+            // Add public/uploads link to the image file
+
+
+            imageFileName = `${req.protocol}://${req.get('host')}/upload/image/${req.files.uploadId[0].filename}`;
+        }
+        const update={
+            fName,lName,website,socialLink,uploadId:imageFileName
+        }
+
+        console.log(update)
+
+        let updatedDoc= await UserModel.findByIdAndUpdate(documentId,update,{new:true}).select(["-password","-role","-termAndCondition","-emailVerified","-emailVerifyCode"]);
+
+        if (updatedDoc) {
+            return res.status(200).json({ status: 200, message: "Profile updated successfully", data: { "userInfo": updatedDoc } })
+          } else {
+            return res.status(401).json({ status: 401, message: "Profile not updated"})
+          }
+
+    }catch{
+        res.status(500).json({ status: 500, message: 'Internal Server Error'});
+    }
+
+}
 
 

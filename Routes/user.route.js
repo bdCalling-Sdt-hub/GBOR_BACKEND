@@ -28,4 +28,7 @@ router.patch("/cancel-user/:id",userauthmiddleware.checkuser,userscontroller.can
 router.get("/content-creator", userscontroller.getAllContentCreator)
 router.get("/content-creator/:id", userscontroller.contentCreator)
 
+
+router.patch("/profile-update/:id", configureFileUpload(), userscontroller.profileUpdate)
+
 module.exports = router

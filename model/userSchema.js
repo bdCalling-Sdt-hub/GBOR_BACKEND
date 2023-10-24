@@ -39,6 +39,8 @@ const userSchema = new mongoose.Schema({
         required: true,
         trim:true
     },
+    website: { type: String, default: false },
+    socialLink:{type:Array,default:false},
     termAndCondition: { type: Boolean, default: false },
     role: { type: String, enum: ['unknown','c_creator', 'admin','delete'], default: 'unknown' },
     emailVerified: { type: Boolean, default: false },

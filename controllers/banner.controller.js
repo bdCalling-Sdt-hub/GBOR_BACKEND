@@ -35,7 +35,7 @@ exports.banner=async(req,res,next)=>{
 }
 
 exports.bannerDataGet=async(req,res,next)=>{
-    if(req.user.role=="admin"){
+  
 
        try{
             let AllBanners = await BannerModel.find();
@@ -45,9 +45,7 @@ exports.bannerDataGet=async(req,res,next)=>{
        }catch(err){
           next(err.message);
        } 
-    }else{
-        return res.status(401).json({status:401,message:"UnAuthorized user"});
-    }
+    
 }
 
 
