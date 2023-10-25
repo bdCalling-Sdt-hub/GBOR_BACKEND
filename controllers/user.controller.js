@@ -129,7 +129,7 @@ exports.userLogin = async (req, res) => {
                     if ((user.email === email) && ismatch) {
                         const token = jwt.sign({ userID: user._id }, process.env.JWT_SECRET, { expiresIn: "3d" })
 
-                        const userInfo = await UserModel.findOne({ email }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'role', 'emailVerified', 'dateOfBirth']);
+                        const userInfo = await UserModel.findOne({ email }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'role', 'emailVerified', 'dateOfBirth', 'website', 'socialLink']);
                         const userData = await UserModel.findOne({ email });
                         let identity = userData.role == "admin" ? true : false;
                         return res.status(200).send({ "status": 200, "messege": "you are logged in successfully", "token": token, "data": { "userInfo": userInfo, identity } })
@@ -302,6 +302,18 @@ exports.approveUser = async (req, res) => {
                 user.role = "c_creator";
                 await user.save();
 
+                const emailData = {
+                    email:"freelancerrtushar@gmail.com",
+                    subject:"Account activate",
+                    html:`
+                        <h1>Hello,${user.fName}</h1>
+                        <p>you account has been approved</p>
+                        <p>Now you can log in in this address http://192.168.10.16:5000/signin</p>
+                        `
+                }
+            
+                emailWithNodemailer(emailData);
+
                 //activating chat
                 const chat = await addChat({ participants: [user._id, req.user._id] });
 
@@ -422,7 +434,7 @@ exports.contentCreator = async (req, res) => {
 
     try {
 
-        let ContentCreator = await UserModel.findById(req.params.id).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category']);;
+        let ContentCreator = await UserModel.findById(req.params.id).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink']);;
 
         return res.status(200).json({ status: 200, message: "content creator details", data: { "Creator Details": ContentCreator } })
 
@@ -447,7 +459,7 @@ exports.getAllContentCreator = async (req, res) => {
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 15;
 
-        let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category']);
+        let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink']);
         let totalUser = await UserModel.find({ role: "c_creator", emailVerified: true }).countDocuments();
 
         return res.status(200).json({
@@ -472,10 +484,11 @@ exports.getAllContentCreator = async (req, res) => {
 
 exports.profileUpdate = async (req, res) => {
 
+    let social = JSON.parse(req.body.socialLink);
 
 
     try {
-        let { fName, lName, website, socialLink, uploadId } = req.body;
+        let { fName, lName, website, uploadId } = req.body;
 
 
         const documentId = req.params.id;
@@ -490,9 +503,21 @@ exports.profileUpdate = async (req, res) => {
 
             imageFileName = `${req.protocol}://${req.get('host')}/upload/image/${req.files.uploadId[0].filename}`;
         }
+        const userData = await UserModel.findById(documentId);
+        let fname = fName ? fName : userData.fName;
+        let lname = lName ? lName : userData.lName;
+        let webSite = website ? website : userData.website;
+        let sociallink = social ? social : userData.social;
+        let uploadid = imageFileName ? imageFileName : userData.imageFileName;
         const update = {
-            fName, lName, website, socialLink, uploadId: imageFileName
+            fName: fname,
+            lName: lname,
+            website: webSite,
+            socialLink: sociallink,
+            uploadId: uploadid
         }
+
+        console.log("fahim", update)
 
 
 
@@ -509,6 +534,27 @@ exports.profileUpdate = async (req, res) => {
 
     } catch {
         res.status(500).json({ status: 500, message: 'Internal Server Error' });
+    }
+
+}
+
+
+exports.searchContentCreator = async (req, res) => {
+
+    let name = req.body.name;
+    try {
+        const searchRegExp = new RegExp('.*' + name + '.*', 'i');
+        const user = await UserModel.find({
+            $or: [
+                { $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } } }
+            ]
+        })
+
+
+        return res.status(200).json({ status: 200, data: { searchData: user } })
+
+    } catch (err) {
+        return res.status(404).json({ status: 404, message: `Don't have any content create in this name ${name}` })
     }
 
 }
