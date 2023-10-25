@@ -114,42 +114,46 @@ exports.userLogin = async (req, res) => {
     console.log(req.body);
     try {
         const user = await UserModel.findOne({ email: email })
-        if (email && password) {
-            if (user.emailVerified === false) {
-                return res.status(401).send({ "status": 401, "messege": "your email is not verified" })
-            }
+        if (user.role == "admin" || user.role == "c_creator") {
+            if (email && password) {
+                if (user.emailVerified === false) {
+                    return res.status(401).send({ "status": 401, "messege": "your email is not verified" })
+                }
 
-            if (user.role === "unknown") {
-                return res.status(401).send({ "status": 401, "messege": "Unathorized user" })
-            }
+                if (user.role === "unknown") {
+                    return res.status(401).send({ "status": 401, "messege": "Unathorized user" })
+                }
 
-            if (user !== null) {
-                const ismatch = await bcrypt.compare(password, user.password)
-                if ((user.email === email) && ismatch) {
-                    const token = jwt.sign({ userID: user._id }, process.env.JWT_SECRET, { expiresIn: "3d" })
+                if (user !== null) {
+                    const ismatch = await bcrypt.compare(password, user.password)
+                    if ((user.email === email) && ismatch) {
+                        const token = jwt.sign({ userID: user._id }, process.env.JWT_SECRET, { expiresIn: "3d" })
 
-                    const userInfo = await UserModel.findOne({ email }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'role', 'emailVerified','dateOfBirth']);
-                    const userData = await UserModel.findOne({ email });
-                    let identity = userData.role == "admin" ? true : false;
-                    return res.status(200).send({ "status": 200, "messege": "you are logged in successfully", "token": token, "data": { "userInfo": userInfo, identity } })
+                        const userInfo = await UserModel.findOne({ email }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'role', 'emailVerified', 'dateOfBirth']);
+                        const userData = await UserModel.findOne({ email });
+                        let identity = userData.role == "admin" ? true : false;
+                        return res.status(200).send({ "status": 200, "messege": "you are logged in successfully", "token": token, "data": { "userInfo": userInfo, identity } })
+
+                    } else {
+                        return res.status(401).send({ "status": 401, "messege": "your credential doesnt match" })
+
+                    }
 
                 } else {
                     return res.status(401).send({ "status": 401, "messege": "your credential doesnt match" })
 
                 }
-
             } else {
-                return res.status(401).send({ "status": 401, "messege": "your credential doesnt match" })
-
+                return res.status(400).send({ "status": 400, "messege": "All fields are required" })
             }
         } else {
-            return res.status(400).send({ "status": 400, "messege": "All fields are required" })
+            return res.status(401).send({ "status": 401, "messege": "You are not authorized user" });
         }
+
     } catch (e) {
         console.log(e)
         return res.status(400).send({ "status": 400, "messege": "unable to login" })
     }
-
 
 }
 
@@ -177,7 +181,7 @@ exports.loggeduserdata = async (req, res) => {
 
     const userData = await UserModel.findById({ _id: req.user._id });
     let identity = userData.role == "admin" ? true : false;
-    const user = await UserModel.findById({ _id: req.user._id }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category','dateOfBirth']);
+    const user = await UserModel.findById({ _id: req.user._id }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'dateOfBirth']);
 
     return res.status(200).send({ "status": 200, "messege": "userdata from database", "data": { "userInfo": user, identity } })
 
@@ -264,17 +268,19 @@ exports.getAllUnapprovedUser = async (req, res) => {
         const limit = Number(req.query.limit) || 5;
 
         try {
-            let allUnapprovedUser = await UserModel.find({ role: "unknown",emailVerified:true}).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 });
-            let totalUser=await UserModel.find({role: "unknown",emailVerified:true}).countDocuments();
-            
+            let allUnapprovedUser = await UserModel.find({ role: "unknown", emailVerified: true }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 });
+            let totalUser = await UserModel.find({ role: "unknown", emailVerified: true }).countDocuments();
 
-            return res.status(200).json({ status: 200, message: 'All unapproved user', data: { "all_unapproved_user": allUnapprovedUser },pagination: {
-                totalDocuments: totalUser,
-                totalPage: Math.ceil(totalUser / limit),
-                currentPage: page,
-                previousPage: page - 1 > 0 ? page - 1 : null,
-                nextPage: page + 1 <= Math.ceil(totalUser / limit) ? page + 1 : null,
-            } });
+
+            return res.status(200).json({
+                status: 200, message: 'All unapproved user', data: { "all_unapproved_user": allUnapprovedUser }, pagination: {
+                    totalDocuments: totalUser,
+                    totalPage: Math.ceil(totalUser / limit),
+                    currentPage: page,
+                    previousPage: page - 1 > 0 ? page - 1 : null,
+                    nextPage: page + 1 <= Math.ceil(totalUser / limit) ? page + 1 : null,
+                }
+            });
         } catch (err) {
             next(err.message);
         }
@@ -286,7 +292,7 @@ exports.getAllUnapprovedUser = async (req, res) => {
 
 exports.approveUser = async (req, res) => {
 
-   if(req.user.role=="admin"){
+    if (req.user.role == "admin") {
         try {
             const id = req.params.id;
             const user = await UserModel.findById(id);
@@ -295,10 +301,10 @@ exports.approveUser = async (req, res) => {
             } else if (user) {
                 user.role = "c_creator";
                 await user.save();
-    
+
                 //activating chat
                 const chat = await addChat({ participants: [user._id, req.user._id] });
-    
+
                 if (chat) {
                     console.log("chat created");
                     const message = await addMessage({
@@ -325,56 +331,56 @@ exports.approveUser = async (req, res) => {
 
 exports.cancelUser = async (req, res) => {
 
-    if(req.user.role=="admin"){
-         try {
-             const id = req.params.id;
-             const user = await UserModel.findById(id);
-             if (!user) {
-                 return res.status(404).json({ status: 404, message: 'User not found' });
-             } else if (user) {
-                 user.role = "delete";
-                 await user.save();
-     
-                 //activating chat
-                
-                 return res.status(200).json({ status: 200, message: 'User cencal successfully' });
-             } else {
-                 return res.status(401).json({ status: 401, message: 'Failed to cancel user' });
-             };
-         }
-         catch (err) {
-             next(err.message);
-         }
-     }
- 
- }
+    if (req.user.role == "admin") {
+        try {
+            const id = req.params.id;
+            const user = await UserModel.findById(id);
+            if (!user) {
+                return res.status(404).json({ status: 404, message: 'User not found' });
+            } else if (user) {
+                user.role = "delete";
+                await user.save();
+
+                //activating chat
+
+                return res.status(200).json({ status: 200, message: 'User cencal successfully' });
+            } else {
+                return res.status(401).json({ status: 401, message: 'Failed to cancel user' });
+            };
+        }
+        catch (err) {
+            next(err.message);
+        }
+    }
+
+}
 
 
- exports.deleteUser = async (req, res) => {
+exports.deleteUser = async (req, res) => {
 
-    if(req.user.role=="admin"){
-         try {
-             const id = req.params.id;
-             const user = await UserModel.findById(id);
-             if (!user) {
-                 return res.status(404).json({ status: 404, message: 'User not found' });
-             } else if (user) {
-                 user.role = "unknown";
-                 await user.save();
-     
-                 //activating chat
-                
-                 return res.status(200).json({ status: 200, message: 'User delete successfully' });
-             } else {
-                 return res.status(401).json({ status: 401, message: 'Failed to delete user' });
-             };
-         }
-         catch (err) {
-             next(err.message);
-         }
-     }
- 
- }
+    if (req.user.role == "admin") {
+        try {
+            const id = req.params.id;
+            const user = await UserModel.findById(id);
+            if (!user) {
+                return res.status(404).json({ status: 404, message: 'User not found' });
+            } else if (user) {
+                user.role = "unknown";
+                await user.save();
+
+                //activating chat
+
+                return res.status(200).json({ status: 200, message: 'User delete successfully' });
+            } else {
+                return res.status(401).json({ status: 401, message: 'Failed to delete user' });
+            };
+        }
+        catch (err) {
+            next(err.message);
+        }
+    }
+
+}
 
 
 
@@ -413,7 +419,7 @@ exports.resetpassword = async (req, res) => {
 
 exports.contentCreator = async (req, res) => {
 
-    
+
     try {
 
         let ContentCreator = await UserModel.findById(req.params.id).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category']);;
@@ -442,15 +448,17 @@ exports.getAllContentCreator = async (req, res) => {
         const limit = Number(req.query.limit) || 15;
 
         let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category']);
-        let totalUser=await UserModel.find({role: "c_creator",emailVerified:true}).countDocuments();
+        let totalUser = await UserModel.find({ role: "c_creator", emailVerified: true }).countDocuments();
 
-        return res.status(200).json({ status: 200, message: "All content creator", data: { "all_creator": ContentCreator },pagination: {
-            totalDocuments: totalUser,
-            totalPage: Math.ceil(totalUser / limit),
-            currentPage: page,
-            previousPage: page - 1 > 0 ? page - 1 : null,
-            nextPage: page + 1 <= Math.ceil(totalUser / limit) ? page + 1 : null,
-        } })
+        return res.status(200).json({
+            status: 200, message: "All content creator", data: { "all_creator": ContentCreator }, pagination: {
+                totalDocuments: totalUser,
+                totalPage: Math.ceil(totalUser / limit),
+                currentPage: page,
+                previousPage: page - 1 > 0 ? page - 1 : null,
+                nextPage: page + 1 <= Math.ceil(totalUser / limit) ? page + 1 : null,
+            }
+        })
 
     } catch (err) {
 
@@ -462,17 +470,17 @@ exports.getAllContentCreator = async (req, res) => {
 
 
 
-exports.profileUpdate=async(req,res)=>{
+exports.profileUpdate = async (req, res) => {
 
-    
 
-    try{
-        let {fName,lName,website,socialLink,uploadId}=req.body;
-       
-        
+
+    try {
+        let { fName, lName, website, socialLink, uploadId } = req.body;
+
+
         const documentId = req.params.id;
 
-        
+
 
         let imageFileName = '';
 
@@ -482,25 +490,25 @@ exports.profileUpdate=async(req,res)=>{
 
             imageFileName = `${req.protocol}://${req.get('host')}/upload/image/${req.files.uploadId[0].filename}`;
         }
-        const update={
-            fName,lName,website,socialLink,uploadId:imageFileName
+        const update = {
+            fName, lName, website, socialLink, uploadId: imageFileName
         }
 
-      
 
-        let updatedDoc= await UserModel.findByIdAndUpdate(documentId,update,{new:true}).select(["-password","-role","-termAndCondition","-emailVerified","-emailVerifyCode"]);
-        let data=await UserModel.findByIdAndUpdate(documentId,update,{new:true}).select(["role"]);
 
-        let identity=data.role=="admin"?true:false;
+        let updatedDoc = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["-password", "-role", "-termAndCondition", "-emailVerified", "-emailVerifyCode"]);
+        let data = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["role"]);
+
+        let identity = data.role == "admin" ? true : false;
         console.log(identity)
         if (updatedDoc) {
-            return res.status(200).json({ status: 200, message: "Profile updated successfully", data: { "userInfo": updatedDoc,identity } })
-          } else {
-            return res.status(401).json({ status: 401, message: "Profile not updated"})
-          }
+            return res.status(200).json({ status: 200, message: "Profile updated successfully", data: { "userInfo": updatedDoc, identity } })
+        } else {
+            return res.status(401).json({ status: 401, message: "Profile not updated" })
+        }
 
-    }catch{
-        res.status(500).json({ status: 500, message: 'Internal Server Error'});
+    } catch {
+        res.status(500).json({ status: 500, message: 'Internal Server Error' });
     }
 
 }
