@@ -303,15 +303,15 @@ exports.approveUser = async (req, res) => {
                 await user.save();
 
                 const emailData = {
-                    email:"freelancerrtushar@gmail.com",
-                    subject:"Account activate",
-                    html:`
+                    email: user.email,
+                    subject: "Account activate",
+                    html: `
                         <h1>Hello,${user.fName}</h1>
                         <p>you account has been approved</p>
                         <p>Now you can log in in this address http://192.168.10.16:5000/signin</p>
                         `
                 }
-            
+
                 emailWithNodemailer(emailData);
 
                 //activating chat
@@ -541,17 +541,34 @@ exports.profileUpdate = async (req, res) => {
 
 exports.searchContentCreator = async (req, res) => {
 
-    let name = req.body.name;
+    let name = req.params.name;
     try {
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 2;
         const searchRegExp = new RegExp('.*' + name + '.*', 'i');
         const user = await UserModel.find({
             $or: [
                 { $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } } }
             ]
+        }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink']);
+
+
+
+        const totalUser = await UserModel.find({
+            $or: [
+                { $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } } }
+            ]
+        }).countDocuments();;
+
+        return res.status(200).json({
+            status: 200, data: { searchData: user }, pagination: {
+                totalDocuments: totalUser,
+                totalPage: Math.ceil(totalUser / limit),
+                currentPage: page,
+                previousPage: page - 1 > 0 ? page - 1 : null,
+                nextPage: page + 1 <= Math.ceil(totalUser / limit) ? page + 1 : null,
+            }
         })
-
-
-        return res.status(200).json({ status: 200, data: { searchData: user } })
 
     } catch (err) {
         return res.status(404).json({ status: 404, message: `Don't have any content create in this name ${name}` })
