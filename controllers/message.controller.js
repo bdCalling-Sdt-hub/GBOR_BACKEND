@@ -49,3 +49,12 @@ exports.deleteMessageById = async (id) =>{
     console.log(error)
   }
 }
+exports.addMutipleMessage = async (messageInfo) => {
+  try {
+    console.log('multiple message called-------->', messageInfo)
+    await Message.insertMany(messageInfo);
+  } catch (err) {
+    console.error(err);
+    return null;
+  }
+};

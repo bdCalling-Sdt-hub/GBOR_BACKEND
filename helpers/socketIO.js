@@ -1,5 +1,5 @@
 const { addChat, getChatByParticipantId } = require("../controllers/chat.controller");
-const { addMessage, getMessageByChatId } = require("../controllers/message.controller");
+const { addMessage, getMessageByChatId, addMutipleMessage } = require("../controllers/message.controller");
 const { getAllNotification, updateAndGetNotificationDetails } = require("../controllers/notification.controller");
 
 const socketIO = (io) => {
@@ -52,6 +52,12 @@ const socketIO = (io) => {
       const allChats = await getChatByParticipantId(data.uid)
       //console.log('hitting from socket -------->', allChats)
       io.to('room' + data.uid).emit('all-chats', allChats)
+    })
+    socket.on('add-multiple-messages', async (data) => {
+      const messages = await addMutipleMessage(data)
+      console.log('--------> new message to be added', messages)
+      await getMessageByChatId(messages[0]?.chat)
+      io.emit('multiple-message-answer', 'all message send successfully')
     })
     socket.on('give-notification', async (data) => {
       if (data.role === 'admin') {
