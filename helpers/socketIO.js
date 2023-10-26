@@ -50,14 +50,16 @@ const socketIO = (io) => {
     })
     socket.on('get-all-chats', async (data) => {
       const allChats = await getChatByParticipantId(data.uid)
+      socket.join('room' + data.uid)
       //console.log('hitting from socket -------->', allChats)
       io.to('room' + data.uid).emit('all-chats', allChats)
     })
     socket.on('add-multiple-messages', async (data) => {
       const messages = await addMutipleMessage(data)
       console.log('--------> new message to be added', messages)
-      await getMessageByChatId(messages[0]?.chat)
-      io.emit('multiple-message-answer', 'all message send successfully')
+      if (messages?.length > 0) {
+        io.emit('multiple-message-answer', 'all message send successfully')
+      }
     })
     
     socket.on('give-notification', async (data) => {
