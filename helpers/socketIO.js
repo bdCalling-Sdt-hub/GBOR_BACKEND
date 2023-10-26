@@ -18,9 +18,9 @@ const socketIO = (io) => {
     });
 
     socket.on("join-chat", async (data) => {
-      socket.join('room' + data?.chatId)
+      socket.join('room' + data?.uid)
       console.log("join-chat info---->", data)
-      const allChats = await getMessageByChatId(data?.chatId, data?.uid)
+      const allChats = await getMessageByChatId(data?.uid)
       io.to("room" + data.uid).emit('all-messages', allChats)
     })
     socket.on('add-new-chat', async (data) => {
@@ -36,8 +36,8 @@ const socketIO = (io) => {
     })
     socket.on('add-new-message', async (data) => {
       var message
-      if (data?.messageInfo && data?.receiverId) {
-        message = await addMessage(data?.messageInfo,data?.receiverId)
+      if (data) {
+        message = await addMessage(data)
       }
       else {
         if (data.uid) {
@@ -48,18 +48,11 @@ const socketIO = (io) => {
       const allMessages = await getMessageByChatId(message?.chat)
       io.to('room' + message.chat).emit('all-messages', allMessages)
     })
-
-    socket.on('get-message-count', async (data) => {
-      const count = await getUnseenMessageCount(data?.uid, data?.chatId)
-      io.to('room' + data.uid).emit('message-count', count)
-    })
-
     socket.on('get-all-chats', async (data) => {
       const allChats = await getChatByParticipantId(data.uid)
       //console.log('hitting from socket -------->', allChats)
       io.to('room' + data.uid).emit('all-chats', allChats)
     })
-
     socket.on('add-multiple-messages', async (data) => {
       const messages = await addMutipleMessage(data)
       console.log('--------> new message to be added', messages)
