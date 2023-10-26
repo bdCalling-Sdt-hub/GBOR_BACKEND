@@ -59,6 +59,7 @@ const socketIO = (io) => {
       await getMessageByChatId(messages[0]?.chat)
       io.emit('multiple-message-answer', 'all message send successfully')
     })
+    
     socket.on('give-notification', async (data) => {
       if (data.role === 'admin') {
         const allNotification = await getAllNotification('admin')
