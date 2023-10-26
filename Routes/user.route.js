@@ -31,4 +31,6 @@ router.get("/content-creator/:id", userscontroller.contentCreator)
 
 router.patch("/profile-update/:id", configureFileUpload(), userscontroller.profileUpdate)
 
+router.get("/search-creator",userscontroller.searchContentCreator)
+
 module.exports = router
