@@ -10,6 +10,7 @@ const bannerRoute = require("./Routes/banner.route")
 const emailSendRoute = require("./Routes/emailSend.route")
 const notificationRoute = require("./Routes/notification.route")
 const messageRoute = require("./Routes/message.route")
+const paymentRoute = require("./Routes/payment.route")
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -41,7 +42,8 @@ app.use("/api/", aboutAndPrivacyRoute)
 app.use("/api/", bannerRoute)
 app.use("/api/", notificationRoute)
 app.use("/api/", emailSendRoute)
-app.use('/api/messages', messageRoute)
+app.use('/api/payment', paymentRoute)
+
 
 
 app.use('/upload/image', express.static(__dirname + '/upload/image/'));
