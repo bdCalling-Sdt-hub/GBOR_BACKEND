@@ -1,21 +1,25 @@
 const mongoose = require('mongoose');
 
 const paymentSchema = new mongoose.Schema({
-  amount:{
-    type:Number,
-    required:false
+  amount: {
+    type: Number,
+    required: false
   },
-  donarName:{
-    type:String,
-    required:false
+  donarName: {
+    type: String,
+    required: false
   },
-  message:{
-    type:String,
-    required:false
+  message: {
+    type: String,
+    required: false
   },
-  creator:{
+  isMessageVisibleL: {
+    type: Boolean,
+    default: false
+  },
+  creator: {
     type: mongoose.Schema.Types.ObjectId,
-    ref:'user'
+    ref: 'user'
   },
 },
   {
@@ -24,4 +28,4 @@ const paymentSchema = new mongoose.Schema({
 );
 
 const Payment = mongoose.model("payment", paymentSchema);
-module.exports=Payment
+module.exports = Payment

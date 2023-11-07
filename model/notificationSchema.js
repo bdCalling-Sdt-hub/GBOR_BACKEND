@@ -5,7 +5,8 @@ const notificationSchema = new mongoose.Schema({
   message: { type: String, required: false },
   image: { type: Object, required: false },
   linkId: { type: String, required: false },
-  type: { type: String, enum: ['admin', 'user', 'host', 'unknown'], default: 'unknown' },
+  role: { type: String, enum: ['admin', 'c_creator', 'unknown'], default: 'unknown' },
+  type: { type: String, enum: ['user', 'payment', 'unknown'], default: 'unknown' },
   viewStatus: { type: Boolean, enum: [true, false], default: false }
 },
   {

@@ -6,7 +6,7 @@ const emailWithNodemailer = require("../config/email.config");
 const { addChat } = require("./chat.controller");
 const { addMessage } = require("./message.controller");
 const { addNotification, getAllNotification } = require("./notification.controller");
-
+let addNotificationCallCount = 0;
 
 
 const userTimers = new Map();
@@ -192,7 +192,8 @@ exports.loggeduserdata = async (req, res) => {
 
 exports.verifyEmail = async (req, res, next) => {
     try {
-
+        addNotificationCallCount++;
+        console.log("Add Notification Call Count------>:", addNotificationCallCount);
         const user = await UserModel.findOne({ email: req.user.email });
         if (!user) {
             return res.status(404).json({ status: 404, message: 'User Not Found' });
@@ -203,17 +204,19 @@ exports.verifyEmail = async (req, res, next) => {
             const notification = {
                 message,
                 image: user.uploadId,
-                type: 'admin',
+                'role': 'admin',
+                type: 'user',
                 viewStatus: false
             }
             await addNotification(notification)
             const allNotification = await getAllNotification('admin', 10, 1)
-            io.email('admin-notification', allNotification)
+            io.emit('admin-notification', allNotification)
             return res.status(200).json({ status: 200, message: 'Email veriified successfully' });
         } else {
             return res.status(401).json({ status: 401, message: 'Failed to verify' });
         };
     } catch (error) {
+        console.log(error);
         next(error)
     }
 };
