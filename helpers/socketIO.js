@@ -1,4 +1,4 @@
-const { addChat, getChatByParticipantId } = require("../controllers/chat.controller");
+const { addChat, getChatByParticipantId, getChatById } = require("../controllers/chat.controller");
 const { addMessage, getMessageByChatId, addMutipleMessage } = require("../controllers/message.controller");
 const { getAllNotification, updateAndGetNotificationDetails } = require("../controllers/notification.controller");
 
@@ -6,7 +6,7 @@ const socketIO = (io) => {
   io.on('connection', (socket) => {
     console.log(`ID: ${socket.id} just connected`);
     socket.on('join-room', (data) => {
-      console.log('join room request sent----------->', data.uid);
+      //console.log('join room request sent----------->', data.uid);
       socket.join('room' + data.uid);
       io.to('room' + data.uid).emit('join-check', 'You are in room: ' + data.uid);
     });
@@ -19,14 +19,15 @@ const socketIO = (io) => {
 
     socket.on("join-chat", async (data) => {
       socket.join('room' + data?.uid)
-      console.log("join-chat info---->", data)
+      //console.log("join-chat info---->", data)
       const allChats = await getMessageByChatId(data?.uid)
       io.to("room" + data.uid).emit('all-messages', allChats)
     })
+
     socket.on('add-new-chat', async (data) => {
       if (data?.chatInfo) {
         const chat = await addChat(data.chatInfo)
-        console.log('--------> new chat to be added', chat)
+        //console.log('--------> new chat to be added', chat)
         socket.join('room' + data.uid)
         io.to('room' + data.uid).emit('chat-id-check', chat)
       }
@@ -44,9 +45,12 @@ const socketIO = (io) => {
           io.to('room' + data.uid).emit('all-messages', [])
         }
       }
-      console.log('--------> new message to be added', message)
+      //console.log('--------> new message to be added', message)
       const allMessages = await getMessageByChatId(message?.chat)
       io.to('room' + message.chat).emit('all-messages', allMessages)
+      const chatInfo = await getChatById(message.chat)
+      console.log('new message notification going ------> ', chatInfo)
+      io.emit('new-message-appeared', chatInfo)
     })
     socket.on('get-all-chats', async (data) => {
       const allChats = await getChatByParticipantId(data.uid)
@@ -54,18 +58,30 @@ const socketIO = (io) => {
       //console.log('hitting from socket -------->', allChats)
       io.to('room' + data.uid).emit('all-chats', allChats)
     })
+
+    socket.on('show-all-messages', async (data) => {
+      const allMessages = await getMessageByChatId(data?.uid)
+      //console.log('show call messge hitted ------------>', data, data.uid, allMessages)
+      io.to('room' + data?.uid).emit('all-messages', allMessages)
+    })
+
     socket.on('add-multiple-messages', async (data) => {
       const messages = await addMutipleMessage(data)
-      console.log('--------> new message to be added', messages)
+      //console.log('--------> new message to be added', messages)
       if (messages?.length > 0) {
-        io.emit('multiple-message-answer', 'all message send successfully')
+        io.emit('multiple-message-hitted', 'check all message')
+        for (let message in messages) {
+          const chatInfo = await getChatById(message.chat)
+          console.log('new multiple message notification going ------> ', chatInfo)
+          socket.emit('new-message-appeared', chatInfo)
+        }
       }
     })
-    
+
     socket.on('give-notification', async (data) => {
       if (data.role === 'admin') {
         const allNotification = await getAllNotification('admin')
-        console.log('admin-wants-notification-------------->', allNotification)
+        //console.log('admin-wants-notification-------------->', allNotification)
         socket.emit('admin-notification', allNotification)
       }
     })

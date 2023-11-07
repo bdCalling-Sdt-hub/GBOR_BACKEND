@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const emailWithNodemailer = require("../config/email.config");
 const { addChat } = require("./chat.controller");
 const { addMessage } = require("./message.controller");
+const { addNotification, getAllNotification } = require("./notification.controller");
 
 
 
@@ -198,6 +199,16 @@ exports.verifyEmail = async (req, res, next) => {
         } else if (user) {
             user.emailVerified = true;
             await user.save();
+            const message = user.fName + ' ' + user.lName + ' wants to join monGbor, plese confirm accept or reject decision'
+            const notification = {
+                message,
+                image: user.uploadId,
+                type: 'admin',
+                viewStatus: false
+            }
+            await addNotification(notification)
+            const allNotification = await getAllNotification('admin', 10, 1)
+            io.email('admin-notification', allNotification)
             return res.status(200).json({ status: 200, message: 'Email veriified successfully' });
         } else {
             return res.status(401).json({ status: 401, message: 'Failed to verify' });
@@ -328,6 +339,7 @@ exports.approveUser = async (req, res) => {
                         console.log("message created");
                     }
                 }
+
                 return res.status(200).json({ status: 200, message: 'User approved successfully' });
             } else {
                 return res.status(401).json({ status: 401, message: 'Failed to approve user' });

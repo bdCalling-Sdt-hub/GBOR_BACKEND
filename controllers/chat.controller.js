@@ -18,8 +18,8 @@ exports.addChat = async (chatInfo) => {
 }
 exports.getChatById = async (id) => {
   try {
-    const chat = await Chat.findById(id);
-    console.log(id, chat)
+    const chat = await Chat.findById(id).populate('participants', 'role uploadId lName fName');
+    console.log('chat Id: ', id)
     if (chat) {
       return chat;
     }
@@ -34,7 +34,7 @@ exports.getChatById = async (id) => {
 exports.getChatByParticipantId = async (id) => {
   try {
     const chat = await Chat.find({ participants: id })
-      .populate('participants')
+      .populate('participants', 'role uploadId lName fName')
     console.log(id, chat)
     if (chat.length > 0) {
       return chat;
