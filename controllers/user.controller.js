@@ -13,99 +13,105 @@ const userTimers = new Map();
 
 exports.userRegister = async (req, res) => {
 
-    if (req.fileValidationError) {
-        return res.status(400).json({ "messege": req.fileValidationError });
-    }
-
-    const { fName, lName, email, userName, dateOfBirth, password, confirmPass, termAndCondition, role, creator_category } = req.body
-    const user = await UserModel.findOne({ email: email })
-    if (user) {
-        return res.status(409).send({ "messege": "email already exists" });
-
-    } else {
-        if (fName && lName && email && userName && dateOfBirth && password && confirmPass) {
-            if (password === confirmPass) {
-                try {
-                    const salt = await bcrypt.genSalt(10);
-                    const hashpassword = await bcrypt.hash(password, salt);
-                    let imageFileName = '';
-
-                    if (req.files.uploadId[0]) {
-                        // Add public/uploads link to the image file
-
-
-                        imageFileName = `${req.protocol}://${req.get('host')}/upload/image/${req.files.uploadId[0].filename}`;
-                    }
-                    const emailVerifyCode = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
-                    const user = await UserModel.create({
-                        fName,
-                        lName,
-                        email,
-                        userName,
-                        dateOfBirth,
-                        password: hashpassword,
-                        uploadId: imageFileName,
-                        termAndCondition,
-                        role: role ? role : "unknown",
-                        emailVerifyCode,
-                        creator_category
-
-
-                    });
-
-
-                    if (userTimers.has(user._id)) {
-                        clearTimeout(userTimers.get(user._id));
-                    }
-
-                    // Set a new timer for the user to reset oneTimeCode after 3 minutes
-                    const userTimer = setTimeout(async () => {
-                        try {
-                            user.oneTimeCode = null;
-                            await user.save();
-                            console.log(`email verify code for user ${user._id} reset to null after 3 minutes`);
-                            // Remove the timer reference from the map
-                            userTimers.delete(user._id);
-                        } catch (error) {
-                            console.error(`Error updating emailverify code for user ${user._id}:`, error);
-                        }
-                    }, 180000); // 3 minutes in milliseconds
-
-                    // Store the timer reference in the map
-                    userTimers.set(user._id, userTimer);
-                    console.log(user._id);
-                    const secretid = process.env.JWT_SECRET;
-                    console.log(secretid);
-                    const token = jwt.sign({ userID: user._id }, secretid, { expiresIn: "15m" })
-
-                    const link = `http://192.168.10.16:5000/email-verify/${user._id}/${token}`
-                    // Prepare email for activate user
-                    const emailData = {
-                        email,
-                        subject: 'Account Activation Email',
-                        html: `
-                            <h1>Hello, ${user.fName}</h1>
-                            <p>Your Email verify link is <h3>${link}</h3> to verify your email</p>
-                            <small>This Code is valid for 3 minutes</small>
-                            `
-                    }
-
-                    emailWithNodemailer(emailData);
-
-                    //const userInfo = await UserModel.findOne({ email }).select(['fName','lName','email','userName','uploadId','role']);
-                    //const userInfo=user.select("-password");
-                    return res.status(201).send({ "status": 201, "messege": "Registerd successfully!Please check your E-mail to verify.", "link": link })
-                } catch (e) {
-                    console.log(e)
-                    return res.status(400).send({ "status": 400, "messege": "unable to register" })
-                }
-
-            } else {
-                return res.status(400).send({ "status": 400, "messege": "password and confirm password does not match" })
-            }
-        } else {
-            return res.status(400).send({ "status": 400, "messege": "All fields are required" })
+    try{
+        if (req.fileValidationError) {
+            return res.status(400).json({ "messege": req.fileValidationError });
         }
+    
+        const { fName, lName, email, userName, dateOfBirth, password, confirmPass, termAndCondition, role, creator_category } = req.body
+        const user = await UserModel.findOne({ email: email })
+        if (user) {
+            return res.status(409).send({ "messege": "email already exists" });
+    
+        } else {
+            if (fName && lName && email && userName && dateOfBirth && password && confirmPass) {
+                if (password === confirmPass) {
+                    try {
+                        const salt = await bcrypt.genSalt(10);
+                        const hashpassword = await bcrypt.hash(password, salt);
+                        let imageFileName = '';
+    
+                        if (req.files.uploadId[0]) {
+                            // Add public/uploads link to the image file
+    
+    
+                            imageFileName = `${req.protocol}://${req.get('host')}/upload/image/${req.files.uploadId[0].filename}`;
+                        }
+                        const emailVerifyCode = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
+                        const user = await UserModel.create({
+                            fName,
+                            lName,
+                            email,
+                            userName,
+                            dateOfBirth,
+                            password: hashpassword,
+                            uploadId: imageFileName,
+                            termAndCondition,
+                            role: role ? role : "unknown",
+                            emailVerifyCode,
+                            creator_category
+    
+    
+                        });
+    
+    
+                        if (userTimers.has(user._id)) {
+                            clearTimeout(userTimers.get(user._id));
+                        }
+    
+                        // Set a new timer for the user to reset oneTimeCode after 3 minutes
+                        const userTimer = setTimeout(async () => {
+                            try {
+                                user.oneTimeCode = null;
+                                await user.save();
+                                console.log(`email verify code for user ${user._id} reset to null after 3 minutes`);
+                                // Remove the timer reference from the map
+                                userTimers.delete(user._id);
+                            } catch (error) {
+                                console.error(`Error updating emailverify code for user ${user._id}:`, error);
+                            }
+                        }, 180000); // 3 minutes in milliseconds
+    
+                        // Store the timer reference in the map
+                        userTimers.set(user._id, userTimer);
+                        console.log(user._id);
+                        const secretid = process.env.JWT_SECRET;
+                        console.log(secretid);
+                        const token = jwt.sign({ userID: user._id }, secretid, { expiresIn: "15m" })
+    
+                        const link = `http://192.168.10.16:5000/email-verify/${user._id}/${token}`
+                        // Prepare email for activate user
+                        const emailData = {
+                            email,
+                            subject: 'Account Activation Email',
+                            html: `
+                                <h1>Hello, ${user.fName}</h1>
+                                <p>Your Email verify link is <h3>${link}</h3> to verify your email</p>
+                                <small>This Code is valid for 3 minutes</small>
+                                `
+                        }
+    
+                        emailWithNodemailer(emailData);
+    
+                        //const userInfo = await UserModel.findOne({ email }).select(['fName','lName','email','userName','uploadId','role']);
+                        //const userInfo=user.select("-password");
+                        return res.status(201).send({ "status": 201, "messege": "Registerd successfully!Please check your E-mail to verify.", "link": link })
+                    } catch (e) {
+                        console.log(e)
+                        return res.status(400).send({ "status": 400, "messege": "unable to register" })
+                    }
+    
+                } else {
+                    return res.status(400).send({ "status": 400, "messege": "password and confirm password does not match" })
+                }
+            } else {
+                return res.status(400).send({ "status": 400, "messege": "All fields are required" })
+            }
+        }
+    }
+    catch(err){
+        console.log(err)
+        return res.status(400).send({ "status": 400, "messege": "unable to register" })
     }
 }
 
@@ -281,9 +287,18 @@ exports.getAllUnapprovedUser = async (req, res) => {
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 5;
 
+        const name = req.query.search || '';
+        const searchRegExp = new RegExp('.*' + name + '.*', 'i');
+        const filter = {
+            $or: [
+                { $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } } },
+                {email: { $regex: searchRegExp } },
+            ],
+        };
+
         try {
-            let allUnapprovedUser = await UserModel.find({ role: "unknown", emailVerified: true }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 });
-            let totalUser = await UserModel.find({ role: "unknown", emailVerified: true }).countDocuments();
+            let allUnapprovedUser = await UserModel.find({ role: "unknown", emailVerified: true, ...filter }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 });
+            let totalUser = await UserModel.find({ role: "unknown", emailVerified: true, ...filter }).countDocuments();
 
 
             return res.status(200).json({
@@ -474,8 +489,20 @@ exports.getAllContentCreator = async (req, res) => {
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 15;
 
-        let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink']);
-        let totalUser = await UserModel.find({ role: "c_creator", emailVerified: true }).countDocuments();
+
+        const name = req.query.search || '';
+        const searchRegExp = new RegExp('.*' + name + '.*', 'i');
+        const filter = {
+            $or: [
+                { $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } } },
+                {email: { $regex: searchRegExp } },
+            ],
+        };
+
+
+
+        let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true, ...filter }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink']);
+        let totalUser = await UserModel.find({ role: "c_creator", emailVerified: true, ...filter }).countDocuments();
 
         return res.status(200).json({
             status: 200, message: "All content creator", data: { "all_creator": ContentCreator }, pagination: {

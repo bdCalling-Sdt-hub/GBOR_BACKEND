@@ -5,6 +5,10 @@ const paymentSchema = new mongoose.Schema({
     type: Number,
     required: false
   },
+  gborAmount: {
+    type: Number,
+    required: false
+  },
   donarName: {
     type: String,
     required: false
@@ -13,7 +17,7 @@ const paymentSchema = new mongoose.Schema({
     type: String,
     required: false
   },
-  isMessageVisibleL: {
+  isMessageVisible: {
     type: Boolean,
     default: false
   },

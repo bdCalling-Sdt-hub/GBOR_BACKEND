@@ -11,16 +11,17 @@ exports.addPayment = async (req, res, next) => {
     console.log("Add Payment Call Count------>:", addPaymentCallCount);
 
     try {
-        const { amount, donarName, message, creator } = req.body;
+        const { amount, donarName, message, creator, gborAmount } = req.body;
 
-        if (!amount || !donarName || !message || !creator) {
+        if (!amount || !donarName || !message || !creator || !gborAmount) {
             return res.status(400).json({ status: 400, message: "All fields are required" });
         } else {
             const payment = new PaymentModel({
                 amount,
                 donarName,
                 message,
-                creator
+                creator,
+                gborAmount
             });
 
             const creatorData = await UserModel.findById(creator);
@@ -67,7 +68,7 @@ exports.getAllPayments = async (req, res, next) => {
     console.log("getAllPaymentsCallCount:", getAllPaymentsCallCount);
 
     try {
-        const requestType = !req.query.requestType ? 'dashboard' : req.query.requestType;
+        const requestType = !req.query.requestType ? 'today-income' : req.query.requestType;
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 15;
         const today = new Date();
@@ -86,36 +87,51 @@ exports.getAllPayments = async (req, res, next) => {
         if (req.user.role === "c_creator") {
             filter = { creator: req.user._id };
         }
+        if (requestType === 'today-income') {
+            const gborAmount = req.query.gborAmount;
+            const name = req.query.search;
 
-        if (requestType === 'dashboard') {
-            data = await PaymentModel.find().limit(limit).skip((page - 1) * limit).sort({ createdAt: -1, ...filter }).populate('creator');
-            totalPayments = await PaymentModel.countDocuments({ ...filter });
-        }
+            if (gborAmount) {
+                const amountRange = gborAmount.split('-');
+                const minAmount = Number(amountRange[0]);
+                const maxAmount = Number(amountRange[1]);
+                console.log('min and max amount --------->', minAmount, maxAmount);
 
-        else if (requestType === 'today-income') {
+                filter = { ...filter, gborAmount: { $gte: minAmount, $lte: maxAmount } };
+            }
+            if(name){
+                filter = { ...filter, 
+                    $or: [
+                        { $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } } },
+                        {email: { $regex: searchRegExp } },
+                    ],
+                };
+            }
+
             data = await PaymentModel.find({ createdAt: { $gte: today }, ...filter }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).populate('creator');
             totalPayments = await PaymentModel.countDocuments({ createdAt: { $gte: today }, ...filter });
         }
 
+
         else if (requestType === 'weekly-income') {
             const today = new Date();
             const tenWeeksAgo = new Date(today);
-            tenWeeksAgo.setDate(today.getDate() - 7*52);
-        
+            tenWeeksAgo.setDate(today.getDate() - 7 * 52);
+
             let totalPaymentsByWeek = {};
-        
+
             for (let i = 51; i >= 0; i--) {
                 const weeklyStartDate = new Date(tenWeeksAgo);
                 weeklyStartDate.setDate(tenWeeksAgo.getDate() + (i * 7));
-        
+
                 const weeklyEndDate = new Date(tenWeeksAgo);
                 weeklyEndDate.setDate(tenWeeksAgo.getDate() + ((i + 1) * 7));
-        
-                const weekWiseData = await PaymentModel.find({ 
-                    createdAt: { $gte: weeklyStartDate, $lt: weeklyEndDate }, 
-                    ...filter 
+
+                const weekWiseData = await PaymentModel.find({
+                    createdAt: { $gte: weeklyStartDate, $lt: weeklyEndDate },
+                    ...filter
                 }).populate('creator');
-        
+
                 const key = `Week ${i + 1}`;
                 if (!totalPaymentsByWeek[key]) {
                     totalPaymentsByWeek[key] = {
@@ -123,13 +139,13 @@ exports.getAllPayments = async (req, res, next) => {
                         totalDonors: 0
                     };
                 }
-        
+
                 weekWiseData.forEach(payment => {
                     totalPaymentsByWeek[key].amount += (payment?.amount || 0);
                     totalPaymentsByWeek[key].totalDonors++;
                 });
             }
-        
+
             data = Object.keys(totalPaymentsByWeek).map(key => {
                 return {
                     weekNo: key,
@@ -138,7 +154,7 @@ exports.getAllPayments = async (req, res, next) => {
                 };
             });
         }
-        
+
 
         else if (requestType === 'monthly-income') {
             const data_by_month = await PaymentModel.find({
@@ -231,7 +247,7 @@ exports.getAllPayments = async (req, res, next) => {
 exports.getPreviousDonors = async (req, res, next) => {
     try {
         const id = req.params.id;
-        const data = await PaymentModel.find({ creator: id }).sort({ amount: -1 }).limit(8);
+        const data = await PaymentModel.find({ creator: id }).sort({ amount: -1 }).limit(12);
         return res.status(200).json({ status: 200, message: "Last donors retrieved successfully", data });
     } catch (err) {
         console.error(err);
@@ -241,18 +257,18 @@ exports.getPreviousDonors = async (req, res, next) => {
 
 exports.exceptMessageView = async (req, res, next) => {
     try {
-        if(req.user.role !== 'admin'){
+        if (req.user.role !== 'admin') {
             return res.status(403).json({ status: 403, message: "Access denied" });
         }
         const id = req.params.id;
         const payment = await PaymentModel.findById(id);
-        if(!payment){
+        if (!payment) {
             return res.status(404).json({ status: 404, message: "Payment not found" });
         }
-        else{
-            payment.messageView = true;
+        else {
+            payment.isMessageVisible = true;
             await payment.save();
-            return res.status(200).json({ status: 200, message: "Payment message view updated successfully" });
+            return res.status(200).json({ status: 200, message: "Payment message view updated successfully", data: payment });
         }
     } catch (err) {
         console.error(err);
