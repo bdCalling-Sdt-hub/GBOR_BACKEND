@@ -6,8 +6,6 @@ const emailWithNodemailer = require("../config/email.config");
 const { addChat } = require("./chat.controller");
 const { addMessage } = require("./message.controller");
 const { addNotification, getAllNotification } = require("./notification.controller");
-let addNotificationCallCount = 0;
-
 
 const userTimers = new Map();
 
@@ -74,9 +72,9 @@ exports.userRegister = async (req, res) => {
     
                         // Store the timer reference in the map
                         userTimers.set(user._id, userTimer);
-                        console.log(user._id);
+                        //console.log(user._id);
                         const secretid = process.env.JWT_SECRET;
-                        console.log(secretid);
+                        //console.log(secretid);
                         const token = jwt.sign({ userID: user._id }, secretid, { expiresIn: "15m" })
     
                         const link = `http://192.168.10.16:5000/email-verify/${user._id}/${token}`
@@ -118,7 +116,7 @@ exports.userRegister = async (req, res) => {
 
 exports.userLogin = async (req, res) => {
     const { email, password } = req.body
-    console.log(req.body);
+    //console.log(req.body);
     try {
         const user = await UserModel.findOne({ email: email })
         if (user.role == "admin" || user.role == "c_creator") {
@@ -174,7 +172,7 @@ exports.changeuserpassword = async (req, res) => {
             const salt = await bcrypt.genSalt(10);
             const hashpassword = await bcrypt.hash(password, salt);
             const passchange = await UserModel.findByIdAndUpdate(req.user._id, { $set: { password: hashpassword } })
-            console.log(passchange)
+            //console.log(passchange)
             return res.status(200).send({ "status": 200, "messege": "password changed successfully" })
         }
     } else {
@@ -194,12 +192,8 @@ exports.loggeduserdata = async (req, res) => {
 
 }
 
-
-
 exports.verifyEmail = async (req, res, next) => {
     try {
-        addNotificationCallCount++;
-        console.log("Add Notification Call Count------>:", addNotificationCallCount);
         const user = await UserModel.findOne({ email: req.user.email });
         if (!user) {
             return res.status(404).json({ status: 404, message: 'User Not Found' });
@@ -347,7 +341,7 @@ exports.approveUser = async (req, res) => {
                 const chat = await addChat({ participants: [user._id, req.user._id] });
 
                 if (chat) {
-                    console.log("chat created");
+                    //console.log("chat created");
                     const message = await addMessage({
                         chat: chat._id,
                         sender: req.user._id,
@@ -490,19 +484,23 @@ exports.getAllContentCreator = async (req, res) => {
         const limit = Number(req.query.limit) || 15;
 
 
-        const name = req.query.search || '';
-        const searchRegExp = new RegExp('.*' + name + '.*', 'i');
-        const filter = {
-            $or: [
-                { $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } } },
-                {email: { $regex: searchRegExp } },
-            ],
-        };
-
+        const name = !req.query.search? null : req.query.search
+        var filter;
+        if(name!==null){
+            const searchRegExp = new RegExp('.*' + name + '.*', 'i');
+            filter = {
+                $or: [
+                    { $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } } },
+                    {email: { $regex: searchRegExp } },
+                ],
+            };
+        }
 
 
         let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true, ...filter }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink']);
         let totalUser = await UserModel.find({ role: "c_creator", emailVerified: true, ...filter }).countDocuments();
+
+        //console.log(totalUser, ContentCreator.length)
 
         return res.status(200).json({
             status: 200, message: "All content creator", data: { "all_creator": ContentCreator }, pagination: {
@@ -559,7 +557,7 @@ exports.profileUpdate = async (req, res) => {
             uploadId: uploadid
         }
 
-        console.log("fahim", update)
+        //console.log("fahim", update)
 
 
 
@@ -567,7 +565,7 @@ exports.profileUpdate = async (req, res) => {
         let data = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["role"]);
 
         let identity = data.role == "admin" ? true : false;
-        console.log(identity)
+        //console.log(identity)
         if (updatedDoc) {
             return res.status(200).json({ status: 200, message: "Profile updated successfully", data: { "userInfo": updatedDoc, identity } })
         } else {

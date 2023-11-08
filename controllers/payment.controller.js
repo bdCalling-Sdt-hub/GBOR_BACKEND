@@ -1,14 +1,10 @@
 const Notification = require("../model/notificationSchema");
 const PaymentModel = require("../model/paymentSchema");
 const UserModel = require("../model/userSchema");
+const mongoose = require("mongoose");
 const { addManyNotifications, allNotifications, getAllNotification } = require("./notification.controller");
 
-let addPaymentCallCount = 0;
-let getAllPaymentsCallCount = 0;
-
 exports.addPayment = async (req, res, next) => {
-    addPaymentCallCount++;
-    console.log("Add Payment Call Count------>:", addPaymentCallCount);
 
     try {
         const { amount, donarName, message, creator, gborAmount } = req.body;
@@ -64,8 +60,6 @@ exports.addPayment = async (req, res, next) => {
 }
 
 exports.getAllPayments = async (req, res, next) => {
-    getAllPaymentsCallCount++;
-    console.log("getAllPaymentsCallCount:", getAllPaymentsCallCount);
 
     try {
         const requestType = !req.query.requestType ? 'today-income' : req.query.requestType;
@@ -95,17 +89,19 @@ exports.getAllPayments = async (req, res, next) => {
                 const amountRange = gborAmount.split('-');
                 const minAmount = Number(amountRange[0]);
                 const maxAmount = Number(amountRange[1]);
-                console.log('min and max amount --------->', minAmount, maxAmount);
+                //console.log('min and max amount --------->', minAmount, maxAmount);
 
                 filter = { ...filter, gborAmount: { $gte: minAmount, $lte: maxAmount } };
             }
-            if(name){
-                filter = { ...filter, 
-                    $or: [
-                        { $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } } },
-                        {email: { $regex: searchRegExp } },
-                    ],
-                };
+            if (name) {
+                const searchRegExp = new RegExp('.*' + name + '.*', 'i');
+                const matchingCreators = await mongoose.model('user').find({
+                    $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } }
+                });
+
+                const creatorIds = matchingCreators.map(creator => creator._id);
+
+                filter = { ...filter, creator: { $in: creatorIds } };
             }
 
             data = await PaymentModel.find({ createdAt: { $gte: today }, ...filter }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).populate('creator');
@@ -199,7 +195,7 @@ exports.getAllPayments = async (req, res, next) => {
                 };
             });
 
-            console.log(data);
+            //console.log(data);
         }
 
 
@@ -218,7 +214,7 @@ exports.getAllPayments = async (req, res, next) => {
         const lastWeekTotal = lastWeekPayments.reduce((total, payment) => total + payment.amount, 0);
         const lastMonthTotal = lastMonthPayments.reduce((total, payment) => total + payment.amount, 0);
 
-        console.log("totalPayments", totalPayments);
+        //console.log("totalPayments", totalPayments);
 
         return res.status(200).json({
             status: 200, message: "Payment retrieved successfully",
