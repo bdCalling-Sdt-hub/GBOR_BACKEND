@@ -81,9 +81,11 @@ exports.getAllPayments = async (req, res, next) => {
         if (req.user.role === "c_creator") {
             filter = { creator: req.user._id };
         }
+
         if (requestType === 'today-income') {
-            const gborAmount = req.query.gborAmount;
+            const gborAmount = !req.query.gborAmount ? '' : req.query.gborAmount;
             const name = req.query.search;
+            //console.log('gborAmount --------->', gborAmount);
 
             if (gborAmount) {
                 const amountRange = gborAmount.split('-');
@@ -234,6 +236,55 @@ exports.getAllPayments = async (req, res, next) => {
                 nextPage: page + 1 <= Math.ceil(totalPayments / limit) ? page + 1 : null,
             },
         });
+    } catch (err) {
+        console.error(err);
+        next(err.message);
+    }
+}
+
+exports.getAllDonorList = async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        var filter = {};
+        const gborAmount = !req.query.gborAmount ? '' : req.query.gborAmount;
+        const name = req.query.search;
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 15;
+        console.log('gborAmount --------->', gborAmount);
+
+        if (gborAmount) {
+            const amountRange = gborAmount.split('-');
+            const minAmount = Number(amountRange[0]);
+            const maxAmount = Number(amountRange[1]);
+            console.log('min and max amount --------->', minAmount, maxAmount);
+
+            filter = { ...filter, gborAmount: { $gte: minAmount, $lte: maxAmount } };
+        }
+        if (name) {
+            const searchRegExp = new RegExp('.*' + name + '.*', 'i');
+            filter = {
+                ...filter,
+                $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } }
+            };
+        }
+        if (req.user.role === 'c_creator') {
+            const data = await PaymentModel.find({ creator: id, ...filter }).sort({ createdAt: -1 }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 });
+            const totalUser = await PaymentModel.countDocuments({ creator: id, ...filter });
+            return res.status(200).json({
+                status: 200, message: "Donor list retrieved successfully",
+                data: data,
+                pagination: {
+                    totalDocuments: totalUser,
+                    totalPage: Math.ceil(totalUser / limit),
+                    currentPage: page,
+                    previousPage: page - 1 > 0 ? page - 1 : null,
+                    nextPage: page + 1 <= Math.ceil(totalUser / limit) ? page + 1 : null,
+                },
+            });
+        }
+        else {
+            return res.status(403).json({ status: 403, message: "Access denied" });
+        }
     } catch (err) {
         console.error(err);
         next(err.message);
