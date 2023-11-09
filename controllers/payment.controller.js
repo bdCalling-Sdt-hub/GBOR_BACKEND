@@ -62,9 +62,12 @@ exports.addPayment = async (req, res, next) => {
 exports.getAllPayments = async (req, res, next) => {
 
     try {
-        const requestType = !req.query.requestType ? 'today-income' : req.query.requestType;
+        const requestType = req.query.requestType;
+        
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 15;
+
+        console.log('request type : ---->', requestType, limit, page)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const monthlyTime = 30 * 24 * 60 * 60 * 1000
@@ -80,6 +83,16 @@ exports.getAllPayments = async (req, res, next) => {
         var filter = {};
         if (req.user.role === "c_creator") {
             filter = { creator: req.user._id };
+        }
+
+        if (!requestType) {
+            return res.status(404).json({ status: 404, message: "Request type not found" });
+        }
+
+        if (requestType === 'dashboard') {
+            data = await PaymentModel.find({ ...filter }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).populate('creator');
+            totalPayments = await PaymentModel.countDocuments({ ...filter });
+            //console.log("dashboard hitted", totalPayments, data);
         }
 
         if (requestType === 'today-income') {
@@ -110,8 +123,7 @@ exports.getAllPayments = async (req, res, next) => {
             totalPayments = await PaymentModel.countDocuments({ createdAt: { $gte: today }, ...filter });
         }
 
-
-        else if (requestType === 'weekly-income') {
+        if (requestType === 'weekly-income') {
             const today = new Date();
             const tenWeeksAgo = new Date(today);
             tenWeeksAgo.setDate(today.getDate() - 7 * 52);
@@ -147,23 +159,25 @@ exports.getAllPayments = async (req, res, next) => {
             data = Object.keys(totalPaymentsByWeek).map(key => {
                 return {
                     weekNo: key,
+                    gborAmount: totalPaymentsByWeek[key].amount / 500,
                     amount: totalPaymentsByWeek[key].amount,
                     totalDonors: totalPaymentsByWeek[key].totalDonors
                 };
             });
         }
 
-
-        else if (requestType === 'monthly-income') {
+        if (requestType === 'monthly-income') {
             const data_by_month = await PaymentModel.find({
                 createdAt: { $gte: monthlyStartDate, $lt: monthlyEndDate },
                 ...filter
-            }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).populate('creator');
+            })
 
             const monthNames = [
                 'January', 'February', 'March', 'April', 'May', 'June',
                 'July', 'August', 'September', 'October', 'November', 'December'
             ];
+
+            //console.log("monthly data ---->", data_by_month.length)
 
             let totalPaymentsByMonth = {};
 
@@ -192,18 +206,13 @@ exports.getAllPayments = async (req, res, next) => {
             data = Object.keys(totalPaymentsByMonth).map(key => {
                 return {
                     monthName: key,
+                    gborAmount: totalPaymentsByMonth[key].amount / 500,
                     amount: totalPaymentsByMonth[key].amount,
                     totalDonors: totalPaymentsByMonth[key].totalDonors
                 };
             });
 
             //console.log(data);
-        }
-
-
-
-        else {
-            return res.status(404).json({ status: 404, message: "Request type not found" });
         }
 
         const todayPayments = await PaymentModel.find({ createdAt: { $gte: today }, ...filter });
@@ -250,13 +259,13 @@ exports.getAllDonorList = async (req, res, next) => {
         const name = req.query.search;
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 15;
-        console.log('gborAmount --------->', gborAmount);
+        //console.log('gborAmount --------->', gborAmount);
 
         if (gborAmount) {
             const amountRange = gborAmount.split('-');
             const minAmount = Number(amountRange[0]);
             const maxAmount = Number(amountRange[1]);
-            console.log('min and max amount --------->', minAmount, maxAmount);
+            //console.log('min and max amount --------->', minAmount, maxAmount);
 
             filter = { ...filter, gborAmount: { $gte: minAmount, $lte: maxAmount } };
         }
@@ -264,7 +273,7 @@ exports.getAllDonorList = async (req, res, next) => {
             const searchRegExp = new RegExp('.*' + name + '.*', 'i');
             filter = {
                 ...filter,
-                $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } }
+                donarName: { $regex: searchRegExp }
             };
         }
         if (req.user.role === 'c_creator') {
