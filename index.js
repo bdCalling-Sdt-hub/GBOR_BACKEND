@@ -33,7 +33,7 @@ socketIO(io);
 global.io = io
 
 const socketIOPort = process.env.SOCKET_IO_PORT
-server.listen(socketIOPort, '192.168.10.18', () => {
+server.listen(socketIOPort, '192.168.10.13', () => {
   console.log(`Socket is listening on port: ${socketIOPort}`);
 });
 
@@ -42,6 +42,7 @@ app.use("/api/", aboutAndPrivacyRoute)
 app.use("/api/", bannerRoute)
 app.use("/api/", notificationRoute)
 app.use("/api/", emailSendRoute)
+app.use('/api/messages', messageRoute)
 app.use('/api/payment', paymentRoute)
 
 
@@ -54,7 +55,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message });
 });
 
-app.listen(port, "192.168.10.18", () => {
+app.listen(port, "192.168.10.13", () => {
   console.log(`server running in ${port}`)
   console.log("ok all right everything")
 })

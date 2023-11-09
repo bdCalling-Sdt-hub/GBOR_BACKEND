@@ -50,7 +50,11 @@ const socketIO = (io) => {
       io.to('room' + message.chat).emit('all-messages', allMessages)
       const chatInfo = await getChatById(message.chat)
       console.log('new message notification going ------> ', chatInfo)
-      io.emit('new-message-appeared', chatInfo)
+      const appearedData = {
+        sender: message.sender,
+        chat: message.chat
+      }
+      io.emit('new-message-appeared', appearedData)
     })
     socket.on('get-all-chats', async (data) => {
       const allChats = await getChatByParticipantId(data.uid)
@@ -71,9 +75,9 @@ const socketIO = (io) => {
       if (messages?.length > 0) {
         io.emit('multiple-message-hitted', 'check all message')
         for (let message in messages) {
-          const chatInfo = await getChatById(message.chat)
+          //const chatInfo = await getChatById(message.chat)
           console.log('new multiple message notification going ------> ', chatInfo)
-          socket.emit('new-message-appeared', chatInfo)
+          socket.emit('new-message-appeared', message.sender)
         }
       }
     })

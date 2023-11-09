@@ -8,7 +8,7 @@ exports.checkuser = async(req, res, next) => {
     if (authorization && authorization.startsWith("Bearer")) {
         try {
             token = authorization.split(" ")[1]; 
-            console.log("tushar", token);
+            //console.log("tushar", token);
             const {userID} = jwt.verify(token, process.env.JWT_SECRET)
            // console.log("tushar",mydata);
             req.user = await UserModel.findById({ _id: userID }).select("-password")

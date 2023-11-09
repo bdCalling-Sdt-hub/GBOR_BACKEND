@@ -47,9 +47,9 @@ exports.addPayment = async (req, res, next) => {
             ];
 
             await addManyNotifications(newNotification);
-            const adminNotification = await getAllNotification('admin', 1, 10);
+            const adminNotification = await getAllNotification('admin', 10, 1);
             io.emit('admin-notification', adminNotification)
-            const creatorNotification = await getAllNotification('c_creator', 1, 10, creator);
+            const creatorNotification = await getAllNotification('c_creator', 10, 1, creator);
             io.to('room' + creator).emit('c_creator-notification', creatorNotification)
             return res.status(200).json({ status: 200, message: "Payment added successfully", data: payment });
         }
@@ -63,7 +63,7 @@ exports.getAllPayments = async (req, res, next) => {
 
     try {
         const requestType = req.query.requestType;
-        
+
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 15;
 
