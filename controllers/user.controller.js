@@ -333,7 +333,7 @@ exports.approveUser = async (req, res) => {
                     html: `
                         <h1>Hello,${user.fName}</h1>
                         <p>you account has been approved</p>
-                        <p>Now you can log in in this address http://192.168.10.16:5000/signin</p>
+                        <p>Now you can log in in this address http://mongbor.com/signin</p>
                         `
                 }
 
