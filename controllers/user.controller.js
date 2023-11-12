@@ -77,7 +77,7 @@ exports.userRegister = async (req, res) => {
                         //console.log(secretid);
                         const token = jwt.sign({ userID: user._id }, secretid, { expiresIn: "15m" })
 
-                        const link = `http://192.168.10.16:3000/email-verify/${user._id}/${token}`
+                        const link = `http://mongbor.com/email-verify/${user._id}/${token}`
                         // Prepare email for activate user
                         const emailData = {
                             email,
