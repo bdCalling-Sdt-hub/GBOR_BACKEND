@@ -77,7 +77,7 @@ exports.userRegister = async (req, res) => {
                         //console.log(secretid);
                         const token = jwt.sign({ userID: user._id }, secretid, { expiresIn: "15m" })
 
-                        const link = `http://192.168.10.16:5000/email-verify/${user._id}/${token}`
+                        const link = `http://192.168.10.16:3000/email-verify/${user._id}/${token}`
                         // Prepare email for activate user
                         const emailData = {
                             email,
@@ -499,7 +499,7 @@ exports.getAllContentCreator = async (req, res) => {
         }
 
 
-        let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true, ...filter }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink']);
+        let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true, ...filter }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink','total_amount']);
         let totalUser = await UserModel.find({ role: "c_creator", emailVerified: true, ...filter }).countDocuments();
 
         //console.log(totalUser, ContentCreator.length)
@@ -527,6 +527,7 @@ exports.getAllContentCreator = async (req, res) => {
 exports.profileUpdate = async (req, res) => {
 
     let social = JSON.parse(req.body.socialLink);
+    console.log(req.body);
 
 
     try {
@@ -537,42 +538,75 @@ exports.profileUpdate = async (req, res) => {
 
 
 
-        let imageFileName = '';
 
-        if (req.files.uploadId[0]) {
-            // Add public/uploads link to the image file
-
-
-            imageFileName = `${req.protocol}://${req.get('host')}/upload/image/${req.files.uploadId[0].filename}`;
-        }
-        const userData = await UserModel.findById(documentId);
-        let fname = fName ? fName : userData.fName;
-        let lname = lName ? lName : userData.lName;
-        let webSite = website ? website : userData.website;
-        let sociallink = social ? social : userData.social;
-        let uploadid = imageFileName ? imageFileName : userData.imageFileName;
-        const update = {
-            fName: fname,
-            lName: lname,
-            website: webSite,
-            socialLink: sociallink,
-            uploadId: uploadid
-        }
-
-        //console.log("fahim", update)
+        if (req.files && req.files['uploadId']) {
+            let imageFileName = '';
+            if (req.files.uploadId[0]) {
+                // Add public/uploads link to the image file
 
 
+                imageFileName = `${req.protocol}://${req.get('host')}/upload/image/${req.files.uploadId[0].filename}`;
+            }
 
-        let updatedDoc = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["-password", "-role", "-termAndCondition", "-emailVerified", "-emailVerifyCode"]);
-        let data = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["role"]);
+            const userData = await UserModel.findById(documentId);
+            let fname = fName ? fName : userData.fName;
+            let lname = lName ? lName : userData.lName;
+            let webSite = website ? website : userData.website;
+            let sociallink = social ? social : userData.social;
+            let uploadid = imageFileName ? imageFileName : userData.imageFileName;
+            const update = {
+                fName: fname,
+                lName: lname,
+                website: webSite,
+                socialLink: sociallink,
+                uploadId: uploadid
+            }
 
-        let identity = data.role == "admin" ? true : false;
-        //console.log(identity)
-        if (updatedDoc) {
-            return res.status(200).json({ status: 200, message: "Profile updated successfully", data: { "userInfo": updatedDoc, identity } })
+            let updatedDoc = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["-password", "-role", "-termAndCondition", "-emailVerified", "-emailVerifyCode"]);
+            let data = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["role"]);
+
+            let identity = data.role == "admin" ? true : false;
+            //console.log(identity)
+            if (updatedDoc) {
+                return res.status(200).json({ status: 200, message: "Profile updated successfully", data: { "userInfo": updatedDoc, identity } })
+            } else {
+                return res.status(401).json({ status: 401, message: "Profile not updated" })
+            }
+
+
         } else {
-            return res.status(401).json({ status: 401, message: "Profile not updated" })
+            const userData = await UserModel.findById(documentId);
+            let fname = fName ? fName : userData.fName;
+            let lname = lName ? lName : userData.lName;
+            let webSite = website ? website : userData.website;
+            let sociallink = social ? social : userData.social;
+
+            const update = {
+                fName: fname,
+                lName: lname,
+                website: webSite,
+                socialLink: sociallink,
+
+            }
+
+
+
+
+            let updatedDoc = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["-password", "-role", "-termAndCondition", "-emailVerified", "-emailVerifyCode"]);
+            let data = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["role"]);
+
+            let identity = data.role == "admin" ? true : false;
+            //console.log(identity)
+            if (updatedDoc) {
+                return res.status(200).json({ status: 200, message: "Profile updated successfully", data: { "userInfo": updatedDoc, identity } })
+            } else {
+                return res.status(401).json({ status: 401, message: "Profile not updated" })
+            }
+
         }
+
+
+
 
     } catch {
         res.status(500).json({ status: 500, message: 'Internal Server Error' });

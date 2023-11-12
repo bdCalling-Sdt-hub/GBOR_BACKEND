@@ -2,8 +2,10 @@ const multer = require('multer');
 const path = require('path');
 
 const configureFileUpload = () => {
+
     const storage = multer.diskStorage({
         destination: function (req, file, cb) {
+
 
             if (
                 file.mimetype === 'image/jpeg' ||
@@ -46,7 +48,7 @@ const configureFileUpload = () => {
         storage: storage,
         fileFilter: fileFilter,
         limits: {
-            fileSize: 3 * 1024 * 1024
+            fileSize: 30 * 1024 * 1024
         },
     }).fields([
         { name: 'uploadId', maxCount: 1 },

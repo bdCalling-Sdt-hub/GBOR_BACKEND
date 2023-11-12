@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema({
     },
     uploadId: {
         type: String,
-        required: true,
+        required: false,
         trim: true
     },
     website: { type: String, default: false },
@@ -46,6 +46,7 @@ const userSchema = new mongoose.Schema({
     emailVerified: { type: Boolean, default: false },
     emailVerifyCode: { type: String, required: false },
     creator_category: { type: String, required: false },
+    total_amount:{type:String,required:false,default:0}
 
 }, { timestamps: true })
 

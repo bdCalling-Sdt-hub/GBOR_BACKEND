@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 const { addManyNotifications, allNotifications, getAllNotification } = require("./notification.controller");
 
 exports.addPayment = async (req, res, next) => {
-
+console.log(req.body);
     try {
         const { amount, donarName, message, creator, gborAmount } = req.body;
 
@@ -19,8 +19,14 @@ exports.addPayment = async (req, res, next) => {
                 creator,
                 gborAmount
             });
-
+          console.log(creator)
             const creatorData = await UserModel.findById(creator);
+            console.log(creatorData);
+            let creatorAmount=parseInt(creatorData.total_amount)+parseInt(gborAmount);
+
+            
+            let updatedDoc = await UserModel.findByIdAndUpdate(creator,{ $set: { total_amount: creatorAmount } }, { new: true });
+            console.log(updatedDoc);
             await payment.save();
 
             const adminMessage = `${donarName} has donated ${amount} to ${creatorData.fName} ${creatorData.lName}`;
