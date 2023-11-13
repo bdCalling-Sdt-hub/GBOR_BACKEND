@@ -49,8 +49,8 @@ app.use('/api/payment', paymentRoute)
 
 app.use('/upload/image', express.static(__dirname + '/upload/image/'));
 
-app.get("/test",(req,res)=>{
-   res.json({messag:"its working in vercel"})
+app.get("/",(req,res)=>{
+   res.json({message:"its working in vercel"})
 })
 
 app.use((err, req, res, next) => {
