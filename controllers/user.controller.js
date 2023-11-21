@@ -181,7 +181,7 @@ exports.changeuserpassword = async (req, res) => {
 
 
 }
-///////////////////
+
 
 exports.changeExistingPassword = async (req, res) => {
 
@@ -223,7 +223,7 @@ exports.changeExistingPassword = async (req, res) => {
 
 }
 
-////////////////
+
 
 exports.loggeduserdata = async (req, res) => {
 
