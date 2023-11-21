@@ -58,7 +58,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message });
 });
 
-app.listen(port,() => {
+app.listen(port,'192.168.10.13',() => {
   console.log(`server running in ${port}`)
   console.log("ok all right everything")
 })

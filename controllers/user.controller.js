@@ -181,6 +181,49 @@ exports.changeuserpassword = async (req, res) => {
 
 
 }
+///////////////////
+
+exports.changeExistingPassword = async (req, res) => {
+
+
+    const user = await UserModel.findById(req.user._id);
+    const { currentPass,password, confirmPass } = req.body
+    
+    if(currentPass=="" || password=="" || confirmPass==""){
+        return res.status(400).send({ "status": 400, "messege": "All fields are required" })
+    }else{
+        const hashpassword = await bcrypt.compare(currentPass,user.password);
+        if(hashpassword){
+            if (password !== confirmPass) {
+                return res.status(400).send({ "status": 400, "messege": "password and confirm password doesnt match" })
+    
+            } else {
+                const salt = await bcrypt.genSalt(10);
+                const hashpassword = await bcrypt.hash(password, salt);
+                const passchange = await UserModel.findByIdAndUpdate(req.user._id, { $set: { password: hashpassword } })
+                //console.log(passchange)
+                return res.status(200).send({ "status": 200, "messege": "password changed successfully" })
+            }
+        }else{
+            return res.status(400).send({ "status": 400, "messege": "Your credential is wrong" })
+        }
+    }
+    
+    
+
+   
+    
+ 
+
+   
+
+
+   
+
+
+}
+
+////////////////
 
 exports.loggeduserdata = async (req, res) => {
 

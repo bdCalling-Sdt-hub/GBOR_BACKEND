@@ -18,6 +18,9 @@ router.get("/loggeduser", userscontroller.loggeduserdata)
 router.post("/send-reset-password-email", userscontroller.senduserpasswordresetemail)
 router.post("/verify-code-reset-password", userscontroller.verifyCodeForResetPassword)
 router.post("/reset-password",userscontroller.resetpassword)
+
+
+router.post("/changeexistingpassword",userauthmiddleware.checkuser,userscontroller.changeExistingPassword);
 /////////////////////////////////////
 router.get("/all-unapproved-user",userauthmiddleware.checkuser,userscontroller.getAllUnapprovedUser)
 
