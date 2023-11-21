@@ -53,8 +53,8 @@ exports.userRegister = async (req, res) => {
                         });
 
 
-                        if (userTimers.has(user._id)) {
-                            clearTimeout(userTimers.get(user._id));
+                        if (userTimers.has(user?._id)) {
+                            clearTimeout(userTimers.get(user?._id));
                         }
 
                         // Set a new timer for the user to reset oneTimeCode after 3 minutes
@@ -62,28 +62,28 @@ exports.userRegister = async (req, res) => {
                             try {
                                 user.oneTimeCode = null;
                                 await user.save();
-                                console.log(`email verify code for user ${user._id} reset to null after 3 minutes`);
+                                //console.log(`email verify code for user ${user._id} reset to null after 3 minutes`);
                                 // Remove the timer reference from the map
-                                userTimers.delete(user._id);
+                                userTimers.delete(user?._id);
                             } catch (error) {
-                                console.error(`Error updating emailverify code for user ${user._id}:`, error);
+                                console.error(`Error updating emailverify code for user ${user?._id}:`, error);
                             }
                         }, 180000); // 3 minutes in milliseconds
 
                         // Store the timer reference in the map
-                        userTimers.set(user._id, userTimer);
+                        userTimers.set(user?._id, userTimer);
                         //console.log(user._id);
                         const secretid = process.env.JWT_SECRET;
                         //console.log(secretid);
-                        const token = jwt.sign({ userID: user._id }, secretid, { expiresIn: "15m" })
+                        const token = jwt.sign({ userID: user?._id }, secretid, { expiresIn: "15m" })
 
-                        const link = `http://mongbor.com/email-verify/${user._id}/${token}`
+                        const link = `http://mongbor.com/email-verify/${user?._id}/${token}`
                         // Prepare email for activate user
                         const emailData = {
                             email,
                             subject: 'Account Activation Email',
                             html: `
-                                <h1>Hello, ${user.fName}</h1>
+                                <h1>Hello, ${user?.fName}</h1>
                                 <p>Your Email verify link is <h3>${link}</h3> to verify your email</p>
                                 <small>This Code is valid for 3 minutes</small>
                                 `
@@ -103,7 +103,7 @@ exports.userRegister = async (req, res) => {
                     return res.status(400).send({ "status": 400, "messege": "password and confirm password does not match" })
                 }
             } else {
-                return res.status(400).send({ "status": 400, "messege": "All fields are required" })
+                return res.status(400).send({ "status": 400, "messege": "All fields are required"})
             }
         }
     }
@@ -226,10 +226,11 @@ exports.changeExistingPassword = async (req, res) => {
 
 
 exports.loggeduserdata = async (req, res) => {
+    console.log(req.user);
 
-    const userData = await UserModel.findById({ _id: req.user._id });
+    const userData = await UserModel.findById({ _id: req.user?._id });
     let identity = userData.role == "admin" ? true : false;
-    const user = await UserModel.findById({ _id: req.user._id }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'dateOfBirth']);
+    const user = await UserModel.findById({ _id: req.user?._id }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'dateOfBirth']);
 
     return res.status(200).send({ "status": 200, "messege": "userdata from database", "data": { "userInfo": user, identity } })
 
