@@ -212,12 +212,12 @@ exports.changeExistingPassword = async (req, res) => {
 }
 
 
-exports.loggeduserdata = async (req, res) => {
+exports.loggeduserdata = async (req, res, next) => {
     try {
 
 
         const userData = await UserModel.findById(req.user._id);
-        console.log("tushar",userData);
+        console.log("tushar", userData);
         let identity = userData.role == "admin" ? true : false;
         const user = await UserModel.findById({ _id: req.user?._id }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'dateOfBirth']);
 
@@ -565,7 +565,7 @@ exports.getAllContentCreator = async (req, res) => {
 exports.profileUpdate = async (req, res) => {
 
     let social = JSON.parse(req.body.socialLink);
-    console.log(req.body);
+
 
 
     try {
@@ -600,13 +600,13 @@ exports.profileUpdate = async (req, res) => {
                 uploadId: uploadid
             }
 
-            let updatedDoc = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["-password", "-role", "-termAndCondition", "-emailVerified", "-emailVerifyCode"]);
+            let updatedDoc = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["-password", "-termAndCondition", "-emailVerified", "-emailVerifyCode"]);
             let data = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["role"]);
-
+            console.log(updatedDoc);
             let identity = data.role == "admin" ? true : false;
             //console.log(identity)
             if (updatedDoc) {
-                return res.status(200).json({ status: 200, message: "Profile updated successfully", data: { "userInfo": updatedDoc, identity } })
+                return res.status(200).json({ status: 200, message: "Profile updated successfully", data: { "userInfo": updatedDoc,"identity":identity} })
             } else {
                 return res.status(401).json({ status: 401, message: "Profile not updated" })
             }
@@ -630,7 +630,7 @@ exports.profileUpdate = async (req, res) => {
 
 
 
-            let updatedDoc = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["-password", "-role", "-termAndCondition", "-emailVerified", "-emailVerifyCode"]);
+            let updatedDoc = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["-password","-termAndCondition", "-emailVerified", "-emailVerifyCode"]);
             let data = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["role"]);
 
             let identity = data.role == "admin" ? true : false;

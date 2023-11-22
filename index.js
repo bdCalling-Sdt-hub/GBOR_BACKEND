@@ -16,26 +16,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const dburl = process.env.DB_URL
 
-dbconection(dburl)
+dbconection(dburl);
 //initilizing socketIO
 const http = require('http');
 const socketIo = require('socket.io');
-const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: "*"
-  }
-});
 
-const socketIO = require("./helpers/socketIO");
-socketIO(io);
 
-global.io = io
 
-const socketIOPort = process.env.SOCKET_IO_PORT
-server.listen(socketIOPort, '192.168.10.13', () => {
-  console.log(`Socket is listening on port: ${socketIOPort}`);
-});
+//const socketIOPort = process.env.SOCKET_IO_PORT
+// server.listen(socketIOPort, '192.168.10.13', () => {
+//   console.log(`Socket is listening on port: ${socketIOPort}`);
+// });
 
 app.use("/api/auth/", userRoute);
 app.use("/api/", aboutAndPrivacyRoute)
@@ -58,7 +49,25 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message });
 });
 
-app.listen(port,'192.168.10.13',() => {
-  console.log(`server running in ${port}`)
-  console.log("ok all right everything")
-})
+const server=app.listen(port,'192.168.10.13', () => {
+  console.log(`Server running on port ${port}`);
+});
+
+
+//const server = http.createServer(app);
+const io = socketIo(server, {
+  pingTimeout: 60000,
+  cors: {
+    origin: "*"
+  }
+});
+
+const socketIO = require("./helpers/socketIO");
+socketIO(io);
+
+global.io = io
+
+// app.listen(port,'192.168.10.13',() => {
+//   console.log(`server running in ${port}`)
+//   console.log("ok all right everything")
+// })
