@@ -103,7 +103,7 @@ exports.userRegister = async (req, res) => {
                     return res.status(400).send({ "status": 400, "messege": "password and confirm password does not match" })
                 }
             } else {
-                return res.status(400).send({ "status": 400, "messege": "All fields are required"})
+                return res.status(400).send({ "status": 400, "messege": "All fields are required" })
             }
         }
     }
@@ -183,56 +183,50 @@ exports.changeuserpassword = async (req, res) => {
 }
 
 
-// exports.changeExistingPassword = async (req, res) => {
+exports.changeExistingPassword = async (req, res) => {
 
 
-//     const user = await UserModel.findById(req.user?._id);
-//     const { currentPass,password, confirmPass } = req.body
-    
-//     if(currentPass=="" || password=="" || confirmPass==""){
-//         return res.status(400).send({ "status": 400, "messege": "All fields are required" })
-//     }else{
-//         const hashpassword = await bcrypt.compare(currentPass,user.password);
-//         if(hashpassword){
-//             if (password !== confirmPass) {
-//                 return res.status(400).send({ "status": 400, "messege": "password and confirm password doesnt match" })
-    
-//             } else {
-//                 const salt = await bcrypt.genSalt(10);
-//                 const hashpassword = await bcrypt.hash(password, salt);
-//                 const passchange = await UserModel.findByIdAndUpdate(req.user?._id, { $set: { password: hashpassword } })
-//                 //console.log(passchange)
-//                 return res.status(200).send({ "status": 200, "messege": "password changed successfully" })
-//             }
-//         }else{
-//             return res.status(400).send({ "status": 400, "messege": "Your credential is wrong" })
-//         }
-//     }
-    
-    
+    const user = await UserModel.findById(req.user?._id);
+    const { currentPass, password, confirmPass } = req.body
 
-   
-    
- 
+    if (currentPass == "" || password == "" || confirmPass == "") {
+        return res.status(400).send({ "status": 400, "messege": "All fields are required" })
+    } else {
+        const hashpassword = await bcrypt.compare(currentPass, user.password);
+        if (hashpassword) {
+            if (password !== confirmPass) {
+                return res.status(400).send({ "status": 400, "messege": "password and confirm password doesnt match" })
 
-   
+            } else {
+                const salt = await bcrypt.genSalt(10);
+                const hashpassword = await bcrypt.hash(password, salt);
+                const passchange = await UserModel.findByIdAndUpdate(req.user?._id, { $set: { password: hashpassword } })
+                //console.log(passchange)
+                return res.status(200).send({ "status": 200, "messege": "password changed successfully" })
+            }
+        } else {
+            return res.status(400).send({ "status": 400, "messege": "Your credential is wrong" })
+        }
+    }
 
-
-   
-
-
-// }
-
+}
 
 
 exports.loggeduserdata = async (req, res) => {
-    console.log(req.user);
+    try {
 
-    const userData = await UserModel.findById({ _id: req.user?._id });
-    let identity = userData.role == "admin" ? true : false;
-    const user = await UserModel.findById({ _id: req.user?._id }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'dateOfBirth']);
 
-    return res.status(200).send({ "status": 200, "messege": "userdata from database", "data": { "userInfo": user, identity } })
+        const userData = await UserModel.findById(req.user._id);
+        console.log("tushar",userData);
+        let identity = userData.role == "admin" ? true : false;
+        const user = await UserModel.findById({ _id: req.user?._id }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'dateOfBirth']);
+
+        return res.status(200).send({ "status": 200, "messege": "userdata from database", "data": { "userInfo": user, identity } });
+
+    } catch (e) {
+        next(e.message);
+    }
+
 
 }
 
@@ -543,7 +537,7 @@ exports.getAllContentCreator = async (req, res) => {
         }
 
 
-        let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true, ...filter }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink','total_amount']);
+        let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true, ...filter }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink', 'total_amount']);
         let totalUser = await UserModel.find({ role: "c_creator", emailVerified: true, ...filter }).countDocuments();
 
         //console.log(totalUser, ContentCreator.length)

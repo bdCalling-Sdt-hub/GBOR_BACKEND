@@ -12,6 +12,7 @@ exports.checkuser = async(req, res, next) => {
             const {userID} = jwt.verify(token, process.env.JWT_SECRET)
            // console.log("tushar",mydata);
             req.user = await UserModel.findById({ _id: userID }).select("-password")
+            
             next()
         } catch (e) {
             console.log(e)
