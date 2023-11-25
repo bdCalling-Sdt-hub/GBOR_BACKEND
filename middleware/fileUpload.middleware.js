@@ -47,9 +47,7 @@ const configureFileUpload = () => {
     const upload = multer({
         storage: storage,
         fileFilter: fileFilter,
-        limits: {
-            fileSize: 30 * 1024 * 1024
-        },
+        
     }).fields([
         { name: 'uploadId', maxCount: 1 },
         { name: 'bannerImage', maxCount: 1 },

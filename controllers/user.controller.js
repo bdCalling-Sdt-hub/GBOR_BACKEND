@@ -606,7 +606,7 @@ exports.profileUpdate = async (req, res) => {
             let identity = data.role == "admin" ? true : false;
             //console.log(identity)
             if (updatedDoc) {
-                return res.status(200).json({ status: 200, message: "Profile updated successfully", data: { "userInfo": updatedDoc,"identity":identity} })
+                return res.status(200).json({ status: 200, message: "Profile updated successfully", data: { "userInfo": updatedDoc, "identity": identity } })
             } else {
                 return res.status(401).json({ status: 401, message: "Profile not updated" })
             }
@@ -630,7 +630,7 @@ exports.profileUpdate = async (req, res) => {
 
 
 
-            let updatedDoc = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["-password","-termAndCondition", "-emailVerified", "-emailVerifyCode"]);
+            let updatedDoc = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["-password", "-termAndCondition", "-emailVerified", "-emailVerifyCode"]);
             let data = await UserModel.findByIdAndUpdate(documentId, update, { new: true }).select(["role"]);
 
             let identity = data.role == "admin" ? true : false;
@@ -686,6 +686,40 @@ exports.searchContentCreator = async (req, res) => {
 
     } catch (err) {
         return res.status(404).json({ status: 404, message: `Don't have any content create in this name ${name}` })
+    }
+
+}
+
+
+exports.profileUpdateByadmin = async (req, res) => {
+   
+    if (req.user?.role == "admin") {
+         
+        try {
+            let sociallink = req.body.socialLink;
+            let { userName, email } = req.body;
+            console.log(email)
+            const user = await UserModel.findById(req.params.id)
+            console.log("tushar",user)
+            if(user){
+                const update = {
+                    userName:userName,
+                    socialLink: sociallink
+    
+                }
+                let data = await UserModel.findByIdAndUpdate(user?._id, update, { new: true }).select(["-password", "-termAndCondition", "-emailVerified", "-emailVerifyCode"]);
+
+                return res.status(200).json({ status: 200, message: "Profile updated successfully"});
+            }else{
+                return res.status(404).json({ status: 404, message: "Profile not updated"});
+            }
+            
+        } catch (err) {
+            return res.status(401).json({ status: 401, message: "Unauthorized user2"});
+        }
+    } else {
+        
+        return res.status(401).json({ status: 401, message: "Unauthorized user" })
     }
 
 }

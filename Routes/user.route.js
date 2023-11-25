@@ -36,4 +36,7 @@ router.patch("/profile-update/:id",configureFileUpload(), userscontroller.profil
 
 router.get("/search-creator/:name",userscontroller.searchContentCreator)
 
+
+router.put("/profile-update-by-admin/:id",userauthmiddleware.checkuser,userscontroller.profileUpdateByadmin);
+
 module.exports = router
