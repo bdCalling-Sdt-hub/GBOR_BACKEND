@@ -531,6 +531,7 @@ exports.getAllContentCreator = async (req, res) => {
             filter = {
                 $or: [
                     { $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } } },
+                    { $expr: { $regexMatch: { input: { $concat: ["$userName"] }, regex: searchRegExp } } },
                     { email: { $regex: searchRegExp } },
                 ],
             };

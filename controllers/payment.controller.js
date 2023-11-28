@@ -117,7 +117,8 @@ exports.getAllPayments = async (req, res, next) => {
             if (name) {
                 const searchRegExp = new RegExp('.*' + name + '.*', 'i');
                 const matchingCreators = await mongoose.model('user').find({
-                    $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } }
+                    $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } },
+                    $expr: { $regexMatch: { input: { $concat: ["$userName"] }, regex: searchRegExp } }
                 });
 
                 const creatorIds = matchingCreators.map(creator => creator._id);
