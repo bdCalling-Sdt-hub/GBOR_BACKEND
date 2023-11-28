@@ -662,7 +662,8 @@ exports.searchContentCreator = async (req, res) => {
         const searchRegExp = new RegExp('.*' + name + '.*', 'i');
         const user = await UserModel.find({
             $or: [
-                { $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } } }
+                { $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } } },
+                { $expr: { $regexMatch: { input: { $concat: ["$userName"] }, regex: searchRegExp } } }
             ]
         }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink']);
 
