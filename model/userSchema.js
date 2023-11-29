@@ -39,6 +39,11 @@ const userSchema = new mongoose.Schema({
         required: false,
         trim: true
     },
+    description: {
+        type: String,
+        required: false,
+        trim: true
+    },
     website: { type: String, default: false },
     socialLink: { type: Object, default: false },
     termAndCondition: { type: Boolean, default: false },

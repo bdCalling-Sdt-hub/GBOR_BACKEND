@@ -694,33 +694,35 @@ exports.searchContentCreator = async (req, res) => {
 
 
 exports.profileUpdateByadmin = async (req, res) => {
-   
+
     if (req.user?.role == "admin") {
-         
+
         try {
+            let description = req.body?.description;
             let sociallink = req.body.socialLink;
             let { userName, email } = req.body;
             console.log(email)
             const user = await UserModel.findById(req.params.id)
-            console.log("tushar",user)
-            if(user){
+            console.log("tushar", user)
+            if (user) {
                 const update = {
-                    userName:userName,
-                    socialLink: sociallink
-    
+                    userName: userName,
+                    socialLink: sociallink,
+                    description
+
                 }
                 let data = await UserModel.findByIdAndUpdate(user?._id, update, { new: true }).select(["-password", "-termAndCondition", "-emailVerified", "-emailVerifyCode"]);
 
-                return res.status(200).json({ status: 200, message: "Profile updated successfully"});
-            }else{
-                return res.status(404).json({ status: 404, message: "Profile not updated"});
+                return res.status(200).json({ status: 200, message: "Profile updated successfully" });
+            } else {
+                return res.status(404).json({ status: 404, message: "Profile not updated" });
             }
-            
+
         } catch (err) {
-            return res.status(401).json({ status: 401, message: "Unauthorized user2"});
+            return res.status(401).json({ status: 401, message: "Unauthorized user2" });
         }
     } else {
-        
+
         return res.status(401).json({ status: 401, message: "Unauthorized user" })
     }
 

@@ -3,6 +3,7 @@ const cors = require("cors")
 require("dotenv").config();
 const port = process.env.PORT || 5000
 const app = express()
+const os=require("os")
 const userRoute = require("./Routes/user.route")
 const dbconection = require("./config/dbconection")
 const aboutAndPrivacyRoute = require("./Routes/aboutAndPrivacy.route")
@@ -53,6 +54,7 @@ app.use((err, req, res, next) => {
 
 const server=app.listen(port,'192.168.10.13', () => {
   console.log(`Server running on port ${port}`);
+  console.log(os.availableParallelism())
 });
 
 
