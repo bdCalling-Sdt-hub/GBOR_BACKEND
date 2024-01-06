@@ -17,11 +17,18 @@ exports.userRegister = async (req, res) => {
         }
 
         const { fName, lName, email, userName, dateOfBirth, password, confirmPass, termAndCondition, role, creator_category } = req.body
-        const user = await UserModel.findOne({ email: email })
+        const user = await UserModel.findOne({ email: email });
+        const username = await UserModel.findOne({ userName: userName })
+
         if (user) {
             return res.status(409).send({ "messege": "email already exists" });
 
-        } else {
+        }
+        else if (username) {
+            return res.status(409).send({ "messege": "User name already exists" });
+        }
+
+        else {
             if (fName && lName && email && userName && dateOfBirth && password && confirmPass) {
                 if (password === confirmPass) {
                     try {
@@ -498,7 +505,7 @@ exports.contentCreator = async (req, res) => {
 
     try {
 
-        let ContentCreator = await UserModel.findById(req.params.id).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink','description']);;
+        let ContentCreator = await UserModel.findById(req.params.id).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink', 'description']);;
 
         return res.status(200).json({ status: 200, message: "content creator details", data: { "Creator Details": ContentCreator } })
 
@@ -538,7 +545,7 @@ exports.getAllContentCreator = async (req, res) => {
         }
 
 
-        let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true, ...filter }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink', 'total_amount','description']);
+        let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true, ...filter }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink', 'total_amount', 'description']);
         let totalUser = await UserModel.find({ role: "c_creator", emailVerified: true, ...filter }).countDocuments();
 
         //console.log(totalUser, ContentCreator.length)
@@ -666,7 +673,7 @@ exports.searchContentCreator = async (req, res) => {
                 { $expr: { $regexMatch: { input: { $concat: ["$fName", " ", "$lName"] }, regex: searchRegExp } } },
                 { $expr: { $regexMatch: { input: { $concat: ["$userName"] }, regex: searchRegExp } } }
             ]
-        }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink','description']);
+        }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink', 'description']);
 
 
 
