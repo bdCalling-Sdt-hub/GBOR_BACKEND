@@ -505,7 +505,7 @@ exports.contentCreator = async (req, res) => {
 
     try {
 
-        let ContentCreator = await UserModel.findOne({userName:userName}).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink', 'description']);
+        let ContentCreator = await UserModel.findOne({userName:req.params.userName}).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink', 'description']);
 
         return res.status(200).json({ status: 200, message: "content creator details", data: { "Creator Details": ContentCreator } })
 
