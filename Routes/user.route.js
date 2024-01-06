@@ -29,7 +29,7 @@ router.patch("/delete-user/:id",userauthmiddleware.checkuser,userscontroller.del
 router.patch("/cancel-user/:id",userauthmiddleware.checkuser,userscontroller.cancelUser)
 
 router.get("/content-creator", userscontroller.getAllContentCreator)
-router.get("/content-creator/:id", userscontroller.contentCreator)
+router.get("/content-creator/:userName", userscontroller.contentCreator)
 
 
 router.patch("/profile-update/:id",configureFileUpload(), userscontroller.profileUpdate)
