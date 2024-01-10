@@ -21,14 +21,14 @@ console.log(req.body);
                 c_userName
 
             });
-          console.log(creator)
+          //console.log(creator)
             const creatorData = await UserModel.findById(creator);
             console.log(creatorData);
             let creatorAmount=parseInt(creatorData.total_amount)+parseInt(gborAmount);
 
             
             let updatedDoc = await UserModel.findByIdAndUpdate(creator,{ $set: { total_amount: creatorAmount } }, { new: true });
-            console.log(updatedDoc);
+            //console.log(updatedDoc);
             await payment.save();
 
             const adminMessage = `${donarName} has donated ${amount} to ${creatorData.fName} ${creatorData.lName}`;
@@ -62,7 +62,7 @@ console.log(req.body);
             return res.status(200).json({ status: 200, message: "Payment added successfully", data: payment });
         }
     } catch (err) {
-        console.error(err);
+        //console.error(err);
         next(err.message);
     }
 }
@@ -255,7 +255,7 @@ exports.getAllPayments = async (req, res, next) => {
             },
         });
     } catch (err) {
-        console.error(err);
+        //console.error(err);
         next(err.message);
     }
 }
