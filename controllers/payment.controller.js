@@ -7,7 +7,7 @@ const { addManyNotifications, allNotifications, getAllNotification } = require("
 exports.addPayment = async (req, res, next) => {
 console.log(req.body);
     try {
-        const { amount, donarName, message, creator, gborAmount } = req.body;
+        const { amount, donarName, message, creator, gborAmount, c_userName } = req.body;
 
         if (!amount || !donarName || !message || !creator || !gborAmount) {
             return res.status(400).json({ status: 400, message: "All fields are required" });
@@ -17,7 +17,9 @@ console.log(req.body);
                 donarName,
                 message,
                 creator,
-                gborAmount
+                gborAmount,
+                c_userName
+
             });
           console.log(creator)
             const creatorData = await UserModel.findById(creator);
