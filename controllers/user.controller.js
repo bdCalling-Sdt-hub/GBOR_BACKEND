@@ -18,9 +18,12 @@ exports.userRegister = async (req, res) => {
 
         const { fName, lName, email, userName, dateOfBirth, password, confirmPass, termAndCondition, role, creator_category } = req.body
         const user = await UserModel.findOne({ email: email })
+        const username = await UserModel.findOne({ userName: userName })
         if (user) {
             return res.status(409).send({ "messege": "email already exists" });
 
+        }else if(username){
+            return res.status(409).send({ "messege": "User name already exists" });
         } else {
             if (fName && lName && email && userName && dateOfBirth && password && confirmPass) {
                 if (password === confirmPass) {
@@ -77,7 +80,7 @@ exports.userRegister = async (req, res) => {
                         //console.log(secretid);
                         const token = jwt.sign({ userID: user?._id }, secretid, { expiresIn: "15m" })
 
-                        const link = `http://mongbor.com/email-verify/${user?._id}/${token}`
+                        const link = `https://mongbor.com/email-verify/${user?._id}/${token}`
                         // Prepare email for activate user
                         const emailData = {
                             email,
@@ -493,7 +496,7 @@ exports.resetpassword = async (req, res) => {
 
 
 
-exports.contentCreator = async (req, res) => {
+exports.contentCreator = async (req, res,next) => {
 
 
     try {

@@ -309,8 +309,9 @@ exports.getAllDonorList = async (req, res, next) => {
 
 exports.getPreviousDonors = async (req, res, next) => {
     try {
-        const id = req.params.id;
-        const data = await PaymentModel.find({ creator: id }).sort({ amount: -1 }).limit(12);
+        const name = req.params.username;
+        //const data = await PaymentModel.find({ creator: id }).sort({ amount: -1 }).limit(12);
+        const data = await PaymentModel.find({ c_userName: name }).sort({ amount: -1 }).limit(12);
         return res.status(200).json({ status: 200, message: "Last donors retrieved successfully", data });
     } catch (err) {
         console.error(err);

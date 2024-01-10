@@ -22,7 +22,8 @@ const userSchema = new mongoose.Schema({
     userName: {
         type: String,
         required: true,
-        trim: true
+        trim: true,
+        unique:true
     },
     dateOfBirth: {
         type: String,

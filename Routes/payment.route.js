@@ -4,7 +4,7 @@ const {addPayment, getAllPayments, getPreviousDonors, exceptMessageView, getAllD
 const userauthmiddleware=require("../middleware/checkuser.middleware.js");
 
 router.post('/', addPayment);
-router.get('/:id', getPreviousDonors);
+router.get('/:username', getPreviousDonors);
 router.get('/donor-list/:id',userauthmiddleware.checkuser,getAllDonorList);
 router.get('/', userauthmiddleware.checkuser,getAllPayments);
 router.patch('/:id', userauthmiddleware.checkuser,exceptMessageView);

@@ -25,6 +25,10 @@ const paymentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'user'
   },
+  c_userName:{
+    type:String,
+    required:true
+  }
 },
   {
     timestamps: true
