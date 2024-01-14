@@ -371,14 +371,14 @@ exports.approveUser = async (req, res) => {
             } else if (user) {
                 user.role = "c_creator";
                 await user.save();
-
+                let link="https://mongbor.com/signin"
                 const emailData = {
                     email: user.email,
                     subject: "Account activate",
                     html: `
                         <h1>Hello,${user.fName}</h1>
                         <p>you account has been approved</p>
-                        <p>Now you can log in in this address http://mongbor.com/signin</p>
+                        <p>Now you can log in in this address <h3>${link}</h3></p>
                         `
                 }
 
