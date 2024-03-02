@@ -1,12 +1,22 @@
 const express = require("express");
 const router = express.Router();
-const {addPayment, getAllPayments, getPreviousDonors, exceptMessageView, getAllDonorList} = require("../controllers/payment.controller")
-const userauthmiddleware=require("../middleware/checkuser.middleware.js");
+const {
+  addPayment,
+  getAllPayments,
+  getPreviousDonors,
+  exceptMessageView,
+  getAllDonorList,
+  reportMessageToAdmin,
+  getAllComments,
+} = require("../controllers/payment.controller");
+const userauthmiddleware = require("../middleware/checkuser.middleware.js");
 
-router.post('/', addPayment);
-router.get('/:username', getPreviousDonors);
-router.get('/donor-list/:id',userauthmiddleware.checkuser,getAllDonorList);
-router.get('/', userauthmiddleware.checkuser,getAllPayments);
-router.patch('/:id', userauthmiddleware.checkuser,exceptMessageView);
+router.get("/comments", userauthmiddleware.checkuser, getAllComments);
+router.get("/donor-list/:id", userauthmiddleware.checkuser, getAllDonorList);
+router.get("/:username", getPreviousDonors);
+router.patch("/report/:id", userauthmiddleware.checkuser, reportMessageToAdmin);
+router.patch("/:id", userauthmiddleware.checkuser, exceptMessageView);
+router.get("/", userauthmiddleware.checkuser, getAllPayments);
+router.post("/", addPayment);
 
-module.exports = router
+module.exports = router;
