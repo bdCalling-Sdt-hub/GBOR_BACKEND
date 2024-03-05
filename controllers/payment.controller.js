@@ -412,30 +412,53 @@ exports.getPreviousDonors = async (req, res, next) => {
 
 exports.getAllComments = async (req, res, next) => {
   const searchTerm = req.query.searchTerm;
+  const type = req.query.type;
   const page = Number(req.query.page || 1);
   const limit = Number(req.query.limit || 10);
   const skip = (page - 1) * limit;
 
   try {
     let query = {};
+    let filter = {};
+
     if (searchTerm) {
       // Create a regex pattern for case-insensitive search
       const regex = new RegExp(searchTerm, "i");
-      // Build the query to search for users based on userName
+      // Search for users based on userName
       const users = await mongoose.model("user").find({ userName: regex });
       // Extract user IDs from the found users
       const userIds = users.map((user) => user._id);
-      // Use the found user IDs to search for comments
+      // Add creator condition to the query
       query.creator = { $in: userIds };
     }
 
-    const result = await PaymentModel.find(query)
+    if (type === "reported-comment") {
+      filter = { reportStatus: true };
+    } else if (type === "all-comment") {
+      filter = {};
+    } else {
+      // Handle the case when type is not recognized
+      console.error("Unrecognized type:", type);
+    }
+
+    // Combine filter and query for the find operation
+    const result = await PaymentModel.find({
+      ...filter,
+      ...query,
+      isMessageVisible: true,
+    })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate("creator");
 
-    const total = await PaymentModel.countDocuments(query);
+    // Count documents based on the filter
+    // Count documents based on the filter and query
+    const total = await PaymentModel.countDocuments({
+      ...filter,
+      ...query,
+      isMessageVisible: true,
+    });
 
     return res.status(200).json({
       status: 200,
@@ -455,6 +478,64 @@ exports.getAllComments = async (req, res, next) => {
     });
   }
 };
+
+//   const type = req.query.type;
+//   const page = Number(req.query.page || 1);
+//   const limit = Number(req.query.limit || 10);
+//   const skip = (page - 1) * limit;
+
+//   console.log(searchTerm);
+
+//   try {
+//     let query = {};
+//     if (searchTerm) {
+//       // Create a regex pattern for case-insensitive search
+//       const regex = new RegExp(searchTerm, "i");
+//       // Build the query to search for users based on userName
+//       const users = await mongoose.model("user").find({ userName: regex });
+//       // Extract user IDs from the found users
+//       const userIds = users.map((user) => user._id);
+//       // Use the found user IDs to search for comments
+//       query.creator = { $in: userIds };
+//     }
+
+//     let filter = {};
+
+//     if (type === "reported-comment") {
+//       filter = { reportStatus: true };
+//     } else if (type === "all-comment") {
+//       filter = {};
+//     } else {
+//       // Handle the case when type is not recognized
+//       console.error("Unrecognized type:", type);
+//     }
+
+//     const result = await PaymentModel.find(filter, query)
+//       .sort({ createdAt: -1 })
+//       .skip(skip)
+//       .limit(limit)
+//       .populate("creator");
+
+//     const total = await PaymentModel.countDocuments(filter);
+
+//     return res.status(200).json({
+//       status: 200,
+//       message: "All comments retrieved successfully",
+//       pagination: {
+//         page,
+//         limit,
+//         total,
+//       },
+//       data: result,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       status: 500,
+//       message: "Internal server error",
+//       error: error.message,
+//     });
+//   }
+// };
 
 exports.reportMessageToAdmin = async (req, res, next) => {
   try {
@@ -476,7 +557,7 @@ exports.reportMessageToAdmin = async (req, res, next) => {
         message: adminMessage,
         image: req.user.uploadId,
         role: "admin",
-        type: "creator-messages",
+        type: "reported-comments",
         linkId: id,
         viewStatus: false,
       },
@@ -520,6 +601,27 @@ exports.exceptMessageView = async (req, res, next) => {
     }
   } catch (err) {
     console.error(err);
+    next(err.message);
+  }
+};
+
+exports.getSingleCreatorComments = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+
+    const result = await PaymentModel.find({
+      creator: id,
+      isMessageVisible: true,
+    })
+      .sort({ createdAt: -1 })
+      .populate("creator");
+
+    return res.status(200).json({
+      status: 200,
+      message: "Creator comments retrieve successfully",
+      data: result,
+    });
+  } catch (err) {
     next(err.message);
   }
 };
