@@ -6,6 +6,7 @@ const {
   addManyNotifications,
   allNotifications,
   getAllNotification,
+  addNotification,
 } = require("./notification.controller");
 
 exports.addPayment = async (req, res, next) => {
@@ -549,24 +550,22 @@ exports.reportMessageToAdmin = async (req, res, next) => {
     }
 
     payment.reportStatus = true;
-    await payment.save();
+    const paymentInfo = await payment.save();
     const adminMessage = `${req.user.userName} reported a comment`;
 
-    const newNotification = [
-      {
-        message: adminMessage,
-        image: req.user.uploadId,
-        role: "admin",
-        type: "reported-comments",
-        linkId: id,
-        viewStatus: false,
-      },
-    ];
+    const newNotification = {
+      message: adminMessage,
+      image: req.user.uploadId,
+      role: "admin",
+      type: "reported-comments",
+      linkId: id,
+      viewStatus: false,
+    };
 
-    await addManyNotifications(newNotification);
+    const dta = await addNotification(newNotification);
     const adminNotification = await getAllNotification("admin", 10, 1);
     io.emit("admin-notification", adminNotification);
-
+    console.log(dta, paymentInfo);
     return res.status(200).json({
       status: 200,
       message: "Report send successfully",

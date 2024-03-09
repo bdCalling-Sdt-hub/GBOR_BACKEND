@@ -17,7 +17,13 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["user", "payment", "unknown", "creator-messages"],
+      enum: [
+        "user",
+        "payment",
+        "unknown",
+        "creator-messages",
+        "reported-comments",
+      ],
       default: "unknown",
     },
     viewStatus: { type: Boolean, enum: [true, false], default: false },
