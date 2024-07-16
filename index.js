@@ -48,7 +48,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message });
 });
 
-const server = app.listen(port, "192.168.10.16", () => {
+const server = app.listen(port, "192.168.10.102", () => {
   console.log(`Server running on port ${port}`);
   console.log(os.availableParallelism());
 });

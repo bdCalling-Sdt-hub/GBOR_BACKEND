@@ -34,7 +34,7 @@ exports.addPayment = async (req, res, next) => {
       let creatorAmount =
         parseInt(creatorData.total_amount) + parseInt(gborAmount);
 
-      let updatedDoc = await UserModel.findByIdAndUpdate(
+      await UserModel.findByIdAndUpdate(
         creator,
         { $set: { total_amount: creatorAmount } },
         { new: true }

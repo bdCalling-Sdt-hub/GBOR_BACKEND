@@ -6,6 +6,8 @@ const emailWithNodemailer = require("../config/email.config");
 const { addChat } = require("./chat.controller");
 const { addMessage } = require("./message.controller");
 const { addNotification, getAllNotification } = require("./notification.controller");
+const Payment = require("../model/paymentSchema");
+const { default: mongoose } = require("mongoose");
 
 const userTimers = new Map();
 
@@ -16,7 +18,8 @@ exports.userRegister = async (req, res) => {
             return res.status(400).json({ "messege": req.fileValidationError });
         }
 
-        const { fName, lName, email, userName, dateOfBirth, password, confirmPass, termAndCondition, role, creator_category } = req.body
+        const { fName, lName, email, userName, dateOfBirth, password, confirmPass, termAndCondition, role, creator_category } = req.body;
+        console.log(req.body)
         const user = await UserModel.findOne({ email: email });
         const username = await UserModel.findOne({ userName: userName })
 
@@ -439,24 +442,18 @@ exports.cancelUser = async (req, res) => {
 }
 
 
-exports.deleteUser = async (req, res) => {
-
+exports.deleteUser = async (req, res, next) => {
     if (req.user.role == "admin") {
         try {
             const id = req.params.id;
             const user = await UserModel.findById(id);
             if (!user) {
                 return res.status(404).json({ status: 404, message: 'User not found' });
-            } else if (user) {
-                user.role = "unknown";
-                await user.save();
+            }
 
-                //activating chat
-
-                return res.status(200).json({ status: 200, message: 'User delete successfully' });
-            } else {
-                return res.status(401).json({ status: 401, message: 'Failed to delete user' });
-            };
+            await UserModel.findByIdAndDelete(id);
+            await Payment.findOneAndDelete({creator: id});
+            return res.status(200).json({ status: 200, message: 'User delete successfully' });
         }
         catch (err) {
             next(err.message);
@@ -548,10 +545,11 @@ exports.getAllContentCreator = async (req, res) => {
         let ContentCreator = await UserModel.find({ role: "c_creator", emailVerified: true, ...filter }).limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 }).select(['fName', 'lName', 'email', 'userName', 'uploadId', 'creator_category', 'website', 'socialLink', 'total_amount', 'description']);
         let totalUser = await UserModel.find({ role: "c_creator", emailVerified: true, ...filter }).countDocuments();
 
-        //console.log(totalUser, ContentCreator.length)
+        const result = await UserModel.find({ role: "c_creator"})
+        console.log("creatorList",  result)
 
         return res.status(200).json({
-            status: 200, message: "All content creator", data: { "all_creator": ContentCreator }, pagination: {
+            status: 200, message: "All content creator", data: { "all_creator": result }, pagination: {
                 totalDocuments: totalUser,
                 totalPage: Math.ceil(totalUser / limit),
                 currentPage: page,

@@ -49,7 +49,6 @@ const socketIO = (io) => {
       const allMessages = await getMessageByChatId(message?.chat)
       io.to('room' + message.chat).emit('all-messages', allMessages)
       const chatInfo = await getChatById(message.chat)
-      console.log('new message notification going ------> ', chatInfo)
       const appearedData = {
         sender: message.sender,
         chat: message.chat
@@ -59,7 +58,6 @@ const socketIO = (io) => {
     socket.on('get-all-chats', async (data) => {
       const allChats = await getChatByParticipantId(data.uid)
       socket.join('room' + data.uid)
-      //console.log('hitting from socket -------->', allChats)
       io.to('room' + data.uid).emit('all-chats', allChats)
     })
 
@@ -76,7 +74,6 @@ const socketIO = (io) => {
         io.emit('multiple-message-hitted', 'check all message')
         for (let message in messages) {
           //const chatInfo = await getChatById(message.chat)
-          console.log('new multiple message notification going ------> ', chatInfo)
           socket.emit('new-message-appeared', message.sender)
         }
       }
@@ -85,7 +82,6 @@ const socketIO = (io) => {
     socket.on('give-notification', async (data) => {
       if (data.role === 'admin') {
         const allNotification = await getAllNotification('admin')
-        //console.log('admin-wants-notification-------------->', allNotification)
         socket.emit('admin-notification', allNotification)
       }
     })

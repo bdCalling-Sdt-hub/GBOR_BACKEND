@@ -8,14 +8,11 @@ exports.checkuser = async(req, res, next) => {
     if (authorization && authorization.startsWith("Bearer")) {
         try {
             token = authorization.split(" ")[1]; 
-            //console.log("tushar", token);
-            const {userID} = jwt.verify(token, process.env.JWT_SECRET)
-           // console.log("tushar",mydata);
+            const {userID} = jwt.verify(token, process.env.JWT_SECRET);
             req.user = await UserModel.findById({ _id: userID }).select("-password")
             
             next()
         } catch (e) {
-            console.log(e)
             return res.status(401).send({ "status": 401, "messege": "Unauthorized user" })   
 
         }
